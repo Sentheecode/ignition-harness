@@ -112,4 +112,12 @@ python research/probe_mcp.py \
   --output /path/to/discovered-tools.json
 ```
 
-headers 文件只存于本机私有位置，不提交。本轮仍未实现桌面产品，也未完成 8.3.9 + Artek 的运行兼容测试。下一步应以已验证的原生能力设计领域适配层，补做权限、继承、并发写入和跨版本验证，而不是继续重复手册总览。
+headers 文件只存于本机私有位置，不提交。本轮仍未实现桌面产品。[8.3.9 原生能力已另行实测](runtime-validation-8.3.9.md)，Artek 模块运行兼容仍待验证。下一步应以已验证的原生能力设计领域适配层，补做权限、继承、并发写入和跨版本验证，而不是继续重复手册总览。
+
+## 补测：Gateway Startup 与 Perspective 组件事件
+
+通过项目 ZIP 增加 `ignition/startup/resource.json` 和 `onStartup.py`，`scope=G`、`attributes.enabled=true`。资源类型、文件名和函数前导由 Beta SDK 的公开 `ScriptConfig.StartupScript.serialize` 确认：`ignition/startup`、`onStartup.py`、`def onStartup():`，脚本体保留函数缩进。实际导入后，Gateway 日志出现 `HARNESS_LAB_STARTUP_V1_VERIFIED`，见[执行记录](evidence/runtime-beta1/startup-execution.json)。
+
+随后在 View 中添加按钮的 `component.onActionPerformed` 脚本。真实浏览器点击后，`system.tag.writeBlocking` 将实验 Memory Tag 写为 91.5，按钮显示 `Event OK: Good`，绑定的项目库脚本 Label 显示 `Script V2 OK: 91.5`，主页面导航次数仍为 1，见[事件结果](evidence/runtime-beta1/component-event-results.json)。该调用发生在 Perspective 事件脚本中，不是新发现的外部 Tag RPC。
+
+测试新增的文本资源见[复跑夹具](../research/fixtures/README.md)。这次覆盖了项目库、Gateway Startup 和组件事件；Timer、Tag Change、Message Handler、Perspective Session/Page 事件等仍未逐项验证，不能一概标为已支持。

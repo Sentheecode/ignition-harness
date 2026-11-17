@@ -1,0 +1,37 @@
+{
+  "create": {
+    "status": 404,
+    "body": {
+      "content_type": "text/html;charset=iso-8859-1",
+      "size": 416
+    }
+  },
+  "write": {
+    "status": 404,
+    "body": {
+      "content_type": "text/html;charset=iso-8859-1",
+      "size": 392
+    }
+  },
+  "read": {
+    "status": 404,
+    "body": {
+      "content_type": "text/html;charset=iso-8859-1",
+      "size": 389
+    }
+  },
+  "config": {
+    "status": 404,
+    "body": {
+      "content_type": "text/html;charset=iso-8859-1",
+      "size": 416
+    }
+  },
+  "read_config": {
+    "status": 404,
+    "body": {
+      "content_type": "text/html;charset=iso-8859-1",
+      "size": 416
+    }
+  }
+}

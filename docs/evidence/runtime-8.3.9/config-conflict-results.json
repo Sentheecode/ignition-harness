@@ -1,0 +1,41 @@
+{
+  "update": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "changes": [
+        {
+          "name": "HarnessLabDB",
+          "type": "ignition/database-connection",
+          "collection": "core",
+          "newSignature": "92fcf4a0bf502db057a57b81160eaed38c065a27c8dc40a5afca0518fc4a982a"
+        }
+      ],
+      "problem": null
+    }
+  },
+  "stale_update": {
+    "status": 500,
+    "body": {
+      "success": false,
+      "changes": [],
+      "problem": {
+        "message": "MODIFY illegal: signature mismatch for 'ResourceId{resourcePath=ignition/database-connection/HarnessLabDB, collectionName=core}'"
+      }
+    }
+  },
+  "read_after": {
+    "status": 200,
+    "poolMaxActive": 4,
+    "healthchecks": {
+      "status": {
+        "name": "databases.connection-HarnessLabDB.status",
+        "result": {
+          "healthy": true,
+          "time": 1794928853287,
+          "message": "Valid"
+        }
+      }
+    }
+  }
+}

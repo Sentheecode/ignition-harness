@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "body": {
+    "name": "HarnessLab",
+    "tagType": "Folder",
+    "tags": [
+      {
+        "dataType": "Float8",
+        "defaultValue": 42.5,
+        "engUnit": "C",
+        "name": "Temperature",
+        "tagType": "AtomicTag",
+        "value": 91.5,
+        "valueSource": "memory"
+      }
+    ]
+  }
+}

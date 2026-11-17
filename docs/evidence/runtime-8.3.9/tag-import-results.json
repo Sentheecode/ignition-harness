@@ -1,0 +1,36 @@
+{
+  "create": {
+    "status": 200,
+    "body": {
+      "successCount": 2,
+      "failureCount": 0,
+      "failures": []
+    }
+  },
+  "configure": {
+    "status": 200,
+    "body": {
+      "successCount": 1,
+      "failureCount": 0,
+      "failures": []
+    }
+  },
+  "export": {
+    "status": 200,
+    "body": {
+      "name": "HarnessLab",
+      "tagType": "Folder",
+      "tags": [
+        {
+          "dataType": "Float8",
+          "defaultValue": 42.5,
+          "engUnit": "C",
+          "name": "Temperature",
+          "tagType": "AtomicTag",
+          "value": 42.5,
+          "valueSource": "memory"
+        }
+      ]
+    }
+  }
+}

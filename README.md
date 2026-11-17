@@ -4,7 +4,7 @@
 
 目标：提供类似 DeepSeek Harness 的桌面工程工作台。左侧 Projects 管理项目与持久登录，直接操作 Gateway 中的 Tag、画面、脚本与配置，并提供实时点位、数据库浏览和内置 Perspective 预览。
 
-**状态：已完成一轮隔离 2027.2.0-beta1 Gateway 运行验证；桌面产品尚未实现，8.3.9 + Artek 仍待运行验证。**
+**状态：已完成隔离 8.3.9 与 2027.2.0-beta1 Gateway 运行验证，包含 Catalyst MCP、Tag、View/脚本及真实 Perspective。桌面产品尚未实现，Artek 模块仍待运行验证。**
 
 ## 目标版本
 
@@ -16,7 +16,9 @@
 
 优先阅读本轮深入调查与用户确认范围；早期文档保留研究过程，以最新调查的修订为准。
 
+- [8.3.9 实测与跨版本差异](docs/runtime-validation-8.3.9.md)
 - [2027.2.0-beta1 实际 Gateway 验证结果](docs/runtime-validation-2027-beta1.md)
+- [基于实测的实现路线与剩余缺口](docs/implementation-route.md)
 - [用户确认的完整产品范围](docs/product-requirements.md)
 - [深入技术调查：Beta SDK、实际工具、登录与实时链路](docs/technical-investigation.md)
 - [Beta1 SDK 可复核证据](docs/evidence/2027.2.0-beta1-sdk.json)

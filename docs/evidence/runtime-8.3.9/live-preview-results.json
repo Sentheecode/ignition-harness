@@ -1,0 +1,29 @@
+{
+  "valueWrite": {
+    "status": 200,
+    "body": {
+      "successCount": 1,
+      "failureCount": 0,
+      "failures": []
+    }
+  },
+  "projectUpdate": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "changes": [
+        {
+          "name": "HarnessLab"
+        }
+      ]
+    }
+  },
+  "updateWithoutReload": true,
+  "scriptUpdated": true,
+  "mainFrameNavigations": 1,
+  "observed_text": [
+    "Ignition Harness — Updated without Designer",
+    "72.5",
+    "Script V2 OK: 72.5"
+  ]
+}

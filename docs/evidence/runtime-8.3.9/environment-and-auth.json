@@ -1,0 +1,25 @@
+{
+  "version": "8.3.9",
+  "build": "b2026082511",
+  "java": "17.0.19",
+  "installed_modules": [
+    "Perspective 3.3.9",
+    "WebDev 6.3.9"
+  ],
+  "official_image": "inductiveautomation/ignition:8.3.9",
+  "application_layer_digest": "sha256:05be5f19baa3f47877b45fdf44819cbec76505056f47be5dc9eaf8e7e111704d",
+  "application_layer_sha256_verified": true,
+  "openapi_path_count": 389,
+  "anonymous_openapi_status": 403,
+  "anonymous_session_status": 401,
+  "authenticated_session_status": 200,
+  "authenticated_openapi_status": 200,
+  "artek_module_installed": false,
+  "database_first_attempt": {
+    "tableLoaded": false,
+    "databaseChangeRefreshed": false,
+    "mainFrameNavigations": 1
+  },
+  "database_later_attempt": "see database-preview-results.json",
+  "database_first_failure_root_cause": "not established; later capture showed data without configuration changes"
+}

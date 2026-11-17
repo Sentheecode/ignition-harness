@@ -1,0 +1,37 @@
+{
+  "observedAt": "2026-11-17T15:30:39.474Z",
+  "clientPackage": "@modelcontextprotocol/client",
+  "clientVersion": "2.2.0",
+  "toolNames": [
+    "diagnostics",
+    "realtime",
+    "query",
+    "providers"
+  ],
+  "serverVersion": {
+    "name": "HarnessLab",
+    "title": "Harness Lab",
+    "version": "1.0.0"
+  },
+  "realtime": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"results\":[{\"quality\":192,\"timestamp\":1794929264393,\"value\":91.5,\"valueType\":\"Float8\"}]}"
+      }
+    ],
+    "structuredContent": {
+      "results": [
+        {
+          "quality": 192,
+          "timestamp": 1794929264393,
+          "value": 91.5,
+          "valueType": "Float8"
+        }
+      ]
+    },
+    "isError": false
+  },
+  "connected": true,
+  "diagnostics": []
+}

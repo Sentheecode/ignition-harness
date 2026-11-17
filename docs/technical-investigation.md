@@ -93,7 +93,7 @@ Beta SDK `TagProvider` 分别提供：
 
 Gateway 配置资源与项目资源不是同一命名空间。可以经实际 OpenAPI 及适配层处理，按 schema 展示字段、读回运行状态；热应用与需要重启必须分别显示。涉及遮蔽的 secret 时保留原值语义，不把掩码当作真实密码写回。
 
-数据库浏览通过 Gateway 中已配置的 datasource 访问，包含连接状态、表/列 metadata、分页结果和 Named Query。浏览数据库不等于导出 JDBC 密码，也不应让 UI 另建一条身份不明的直连数据库连接。结构和查询结果使用独立刷新策略，不给每一行数据开 Tag 式订阅。尚未取得实际 Gateway OpenAPI，因此这里没有编造 REST endpoint 清单。
+数据库浏览通过 Gateway 中已配置的 datasource 访问，包含连接状态、表/列 metadata、分页结果和 Named Query。浏览数据库不等于导出 JDBC 密码，也不应让 UI 另建一条身份不明的直连数据库连接。结构和查询结果使用独立刷新策略，不给每一行数据开 Tag 式订阅。后续已获取实际 Beta Gateway OpenAPI，并验证连接配置及项目脚本查询；接口和范围见[运行验证报告](runtime-validation-2027-beta1.md)。独立的通用 SQL/表结构浏览 RPC 仍待验证。
 
 ## 5. Artek 的真实覆盖与明确缺口
 

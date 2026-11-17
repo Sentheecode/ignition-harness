@@ -1,0 +1,81 @@
+{
+  "versions": {
+    "8.3.9": {
+      "paths": 389
+    },
+    "2027.2.0-beta1": {
+      "paths": 455
+    }
+  },
+  "tested_routes": {
+    "/data/api/v1/tags/configuration": {
+      "8.3.9": [],
+      "2027.2.0-beta1": [
+        "get",
+        "post"
+      ]
+    },
+    "/data/api/v1/tags/read": {
+      "8.3.9": [],
+      "2027.2.0-beta1": [
+        "get"
+      ]
+    },
+    "/data/api/v1/tags/write": {
+      "8.3.9": [],
+      "2027.2.0-beta1": [
+        "post"
+      ]
+    },
+    "/data/api/v1/tags/import": {
+      "8.3.9": [
+        "post"
+      ],
+      "2027.2.0-beta1": [
+        "post"
+      ]
+    },
+    "/data/api/v1/tags/export": {
+      "8.3.9": [
+        "get"
+      ],
+      "2027.2.0-beta1": [
+        "get"
+      ]
+    },
+    "/data/api/v1/projects": {
+      "8.3.9": [
+        "post"
+      ],
+      "2027.2.0-beta1": [
+        "post"
+      ]
+    },
+    "/data/api/v1/projects/import/{name}": {
+      "8.3.9": [
+        "post"
+      ],
+      "2027.2.0-beta1": [
+        "post"
+      ]
+    },
+    "/data/api/v1/projects/export/{name}": {
+      "8.3.9": [
+        "get"
+      ],
+      "2027.2.0-beta1": [
+        "get"
+      ]
+    },
+    "/data/api/v1/resources/ignition/database-connection": {
+      "8.3.9": [
+        "post",
+        "put"
+      ],
+      "2027.2.0-beta1": [
+        "post",
+        "put"
+      ]
+    }
+  }
+}

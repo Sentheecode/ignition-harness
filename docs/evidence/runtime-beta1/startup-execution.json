@@ -1,0 +1,10 @@
+{
+  "marker": "HARNESS_LAB_STARTUP_V1_VERIFIED",
+  "observed_gateway_log": [
+    "I [HarnessLabStartup             ] [15:26:50.070]: HARNESS_LAB_STARTUP_V1_VERIFIED collection=HarnessLab"
+  ],
+  "resource_type": "ignition/startup",
+  "script_filename": "onStartup.py",
+  "enabled": true,
+  "designer_opened": false
+}
