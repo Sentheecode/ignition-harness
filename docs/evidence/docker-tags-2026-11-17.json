@@ -1,0 +1,86 @@
+{
+  "evidence_kind": "docker-hub-tag-api-metadata",
+  "runtime_verified": false,
+  "note": "Tag metadata only. Images were not pulled or run in this research pass.",
+  "accessed": "2026-11-17",
+  "timezone_label": "Asia/Singapore (UTC+8)",
+  "registry": "https://hub.docker.com/r/inductiveautomation/ignition/tags",
+  "tags": [
+    {
+      "name": "2027.2.0-beta1",
+      "api_url": "https://hub.docker.com/v2/repositories/inductiveautomation/ignition/tags/2027.2.0-beta1",
+      "tag_status": "active",
+      "last_updated_utc": "2026-11-04T00:28:38.805136Z",
+      "last_updated_asia_singapore": "2026-11-04 08:28:38 Asia/Singapore (UTC+8)",
+      "full_size_bytes_hub_field": 2225539035,
+      "images": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:8893fd9065ebb48965fa249dadbd11d48bb4edbd2047272889d411c7ab4b76c9",
+          "size": 2225539035,
+          "status": "active"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:d3489b97264f242ffaef1af8c8b9ab1ee5a4f92f361f6fcc0f80f56cde8afc89",
+          "size": 2224231601,
+          "status": "active"
+        }
+      ],
+      "architectures_present": [
+        "amd64",
+        "arm64"
+      ],
+      "arm_v7_present_on_this_tag": false
+    },
+    {
+      "name": "8.3.9",
+      "api_url": "https://hub.docker.com/v2/repositories/inductiveautomation/ignition/tags/8.3.9",
+      "tag_status": "active",
+      "last_updated_utc": "2026-08-25T22:28:10.005643Z",
+      "last_updated_asia_singapore": "2026-08-26 06:28:10 Asia/Singapore (UTC+8)",
+      "full_size_bytes_hub_field": 2112316008,
+      "images": [
+        {
+          "os": "linux",
+          "architecture": "amd64",
+          "digest": "sha256:1e6778e8b787baf0b46d9018ac1b77ba58b5c618ea0f3ae543a465fb657d4295",
+          "size": 2112316008,
+          "status": "active"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm64",
+          "digest": "sha256:56263d587676f128275d13609c2afb4edeb1fea4750a31cac37423acb21e37bd",
+          "size": 2099639190,
+          "status": "active"
+        },
+        {
+          "os": "linux",
+          "architecture": "arm",
+          "variant": "v7",
+          "digest": "sha256:8fb87070c7164f745f5d8974d775c4585126cf7f38cfed9f6c8f0b085428e4c9",
+          "size": 2095225488,
+          "status": "active"
+        }
+      ],
+      "architectures_present": [
+        "amd64",
+        "arm64",
+        "arm/v7"
+      ]
+    }
+  ],
+  "related_docs": {
+    "docker_image_manual_2027": "https://www.docs.inductiveautomation.com/docs/2027/platform/advanced-deployments/docker-image",
+    "generic_page_still_lists": [
+      "linux/amd64",
+      "linux/arm64",
+      "linux/arm/v7"
+    ],
+    "generic_vs_beta1_tag": "The generic 2027 Docker Image page still lists linux/arm/v7. The 2027.2.0-beta1 tag metadata retrieved on 2026-11-17 contains only amd64 and arm64. The 8.3-to-2027 upgrade guide states Ignition 2027 bundles Java 25, which does not support 32-bit ARM, and there is no 2027 ZIP installer for 32-bit ARM.",
+    "eula_env": "ACCEPT_IGNITION_EULA=Y agrees that use of the software in the image is governed by the Inductive Automation Software License Agreement, per the same Docker Image page."
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "evidence_kind": "official-docs-screenshot-notes",
+  "runtime_verified": false,
+  "accessed": "2026-11-17",
+  "timezone_label": "Asia/Singapore (UTC+8)",
+  "source_url": "https://docs.inductiveautomation.com/assets/images/configure-primitives-panel-14ba3d6cce6be590ceb25358ac7d5bcd.png",
+  "cited_from": "https://www.docs.inductiveautomation.com/docs/2027/ignition-modules/catalyst/catalyst-agent",
+  "alt_text_in_markdown_docs": "The Configure Primitives panel with custom tools and built-in tools selected.",
+  "file": {
+    "http_status": 200,
+    "content_type_observed": "image/png (inferred from signature and URL)",
+    "bytes": 61304,
+    "sha256": "89be9ee4aeae939113a687a0e3b99e2d23137064faa28e12a3579a655630e3ed",
+    "png_dimensions_px": {
+      "width": 1041,
+      "height": 909
+    }
+  },
+  "visible_ui_labels_quoted": {
+    "window_title": "Configure Test_Server Primitives",
+    "section": "Exposed Tools",
+    "filter_placeholder": "Filter tools...",
+    "groups": [
+      {
+        "group": "ignition/tags",
+        "group_checkbox": "unchecked in this screenshot",
+        "tools": [
+          {
+            "display_name": "realtime",
+            "checked": true,
+            "description_visible": "Reads live tag values directly from the tag subsystem, returning value, quality, timestamp, and valueType for each requested path."
+          },
+          {
+            "display_name": "query",
+            "checked": false,
+            "description_visible": "Queries the tag provider for all matching tags. Each result gives the tag's fullPath and tagKind. For a value-holding tag,",
+            "note": "The last sentence is visually truncated in the screenshot; the remainder is not evidenced here."
+          },
+          {
+            "display_name": "providers",
+            "checked": false,
+            "description_visible": "Returns the available tag providers for querying tags"
+          },
+          {
+            "display_name": "diagnostics",
+            "checked": false,
+            "description_visible": "Returns the diagnostics for the provided path"
+          }
+        ]
+      },
+      {
+        "group": "project/samplequickstart",
+        "group_checkbox": "checked in this screenshot",
+        "tools": [
+          {
+            "display_name": "Test",
+            "checked": true,
+            "description_visible": "Test MCP Server Implementation"
+          }
+        ]
+      }
+    ],
+    "buttons": [
+      "Cancel",
+      "Save Changes"
+    ]
+  },
+  "limits": [
+    "This is a rolling 2027 user-manual screenshot, not a proven 2027.2.0-beta1 build capture.",
+    "Display names in the Gateway UI are not proven equal to MCP wire tool names returned by tools/list.",
+    "The filter box appears empty. Below the last group there is unused vertical space; only two groups are visible in the frame. This is evidence about what this screenshot shows, not a proof that no other built-in groups exist on other Gateways, editions, or builds.",
+    "The binary image is not redistributed in this repository."
+  ]
+}

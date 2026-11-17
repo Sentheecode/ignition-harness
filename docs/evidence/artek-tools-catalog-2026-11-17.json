@@ -1,0 +1,350 @@
+{
+  "evidence_kind": "vendor-handbook-tool-catalog-extract",
+  "runtime_verified": false,
+  "accessed": "2026-11-17",
+  "timezone_label": "Asia/Singapore (UTC+8)",
+  "source_url": "https://docs.artek.io/mcp/tools/",
+  "source_html_sha256_this_pass": "909e48fc4fdaaef13ab02af0addb147463a1cb24bd0d4f4ceee955edd6b439ab",
+  "source_html_bytes_this_pass": 98817,
+  "vendor_authority_note": "The handbook states the authoritative list for a given gateway and key is the artek-mcp://tools resource, or the client's tool list. This extract is from the public handbook, not a live tools/list.",
+  "general_rules_quoted_or_paraphrased": [
+    "Tools marked mutating are refused while readOnly is on (the default) and are then limited by the mutation allowlist.",
+    "Every mutating tool accepts dryRun: true.",
+    "The profile is a property of the credential, not the request.",
+    "A key with no profile is not narrowed."
+  ],
+  "named_tools_by_provider": {
+    "gateway": [
+      {
+        "name": "gateway_info",
+        "mutating": false,
+        "purpose": "gateway identity and version"
+      },
+      {
+        "name": "modules_list",
+        "mutating": false,
+        "purpose": "installed modules"
+      },
+      {
+        "name": "database_connections",
+        "mutating": false,
+        "purpose": "database connections and their status"
+      },
+      {
+        "name": "opc_connections_list",
+        "mutating": false,
+        "purpose": "OPC connection name, type, state and fault (no endpoint URLs)"
+      },
+      {
+        "name": "system_metrics",
+        "mutating": false,
+        "purpose": "JVM heap, threads, CPU and GC snapshot"
+      },
+      {
+        "name": "gateway_logs",
+        "mutating": false,
+        "purpose": "bounded, filtered log query"
+      },
+      {
+        "name": "loggers_list",
+        "mutating": false,
+        "purpose": "which loggers exist and at what level"
+      },
+      {
+        "name": "logger_level_set",
+        "mutating": true,
+        "purpose": "set one logger's level, runtime only"
+      },
+      {
+        "name": "redundancy_status",
+        "mutating": false,
+        "purpose": "role, activity level, peer status and recovery mode"
+      },
+      {
+        "name": "modules_quarantined",
+        "mutating": false,
+        "purpose": "modules the gateway quarantined"
+      },
+      {
+        "name": "licenses_list",
+        "mutating": false,
+        "purpose": "license state, including unlicensed or expired trials"
+      }
+    ],
+    "projects": [
+      {
+        "name": "projects_list",
+        "mutating": false,
+        "purpose": "the gateway's projects"
+      },
+      {
+        "name": "project_resources",
+        "mutating": false,
+        "purpose": "a project's resources"
+      },
+      {
+        "name": "project_resource_read",
+        "mutating": false,
+        "purpose": "one resource's files or content"
+      },
+      {
+        "name": "project_resource_write",
+        "mutating": true,
+        "purpose": "create or modify one resource file, validated before writing"
+      },
+      {
+        "name": "project_resource_delete",
+        "mutating": true,
+        "name_echo": true,
+        "purpose": "delete a whole resource"
+      }
+    ],
+    "config": [
+      {
+        "name": "config_types",
+        "mutating": false,
+        "purpose": "registered resource types"
+      },
+      {
+        "name": "config_resources",
+        "mutating": false,
+        "purpose": "resources by module and type"
+      },
+      {
+        "name": "config_resource_read",
+        "mutating": false,
+        "purpose": "file list, attributes or content; secret fields are always redacted"
+      },
+      {
+        "name": "config_manifest",
+        "mutating": false,
+        "purpose": "per-resource SHA-256 digests for configuration drift checks"
+      },
+      {
+        "name": "config_resource_write",
+        "mutating": true,
+        "purpose": "create or modify one file; applies hot or after restart as the resource type requires; refuses content containing the redaction marker"
+      },
+      {
+        "name": "config_resource_delete",
+        "mutating": true,
+        "name_echo": true,
+        "purpose": "delete a whole resource"
+      }
+    ],
+    "tags": [
+      {
+        "name": "tag_providers_list",
+        "mutating": false,
+        "purpose": "tag providers"
+      },
+      {
+        "name": "tag_browse",
+        "mutating": false,
+        "purpose": "browse a folder (up to 500 nodes)"
+      },
+      {
+        "name": "tag_read",
+        "mutating": false,
+        "purpose": "read values (up to 100 paths)"
+      },
+      {
+        "name": "tag_config_read",
+        "mutating": false,
+        "purpose": "tag configuration, not values (up to 50 paths, recursive, localPropsOnly)"
+      },
+      {
+        "name": "udt_types_list",
+        "mutating": false,
+        "purpose": "UDT definitions in a provider's _types_ tree (up to 200)"
+      },
+      {
+        "name": "udt_definition_read",
+        "mutating": false,
+        "purpose": "one UDT definition's members and parameters"
+      },
+      {
+        "name": "tag_write",
+        "mutating": true,
+        "purpose": "up to 50 path and value pairs, with a quality result per path"
+      }
+    ],
+    "alarms": [
+      {
+        "name": "alarms_active",
+        "mutating": false
+      },
+      {
+        "name": "alarm_journals_list",
+        "mutating": false
+      },
+      {
+        "name": "alarm_history",
+        "mutating": false
+      },
+      {
+        "name": "alarm_acknowledge",
+        "mutating": true
+      },
+      {
+        "name": "alarm_shelve",
+        "mutating": true
+      },
+      {
+        "name": "alarm_unshelve",
+        "mutating": true
+      }
+    ],
+    "historian": [
+      {
+        "name": "history_providers_list",
+        "mutating": false
+      },
+      {
+        "name": "history_browse",
+        "mutating": false
+      },
+      {
+        "name": "tag_history",
+        "mutating": false,
+        "note": "takes historian paths (histprov:), not tag paths"
+      },
+      {
+        "name": "history_provider_edit",
+        "mutating": true
+      },
+      {
+        "name": "history_provider_delete",
+        "mutating": true,
+        "name_echo": true
+      }
+    ],
+    "gatewaynetwork": [
+      {
+        "name": "gan_overview",
+        "mutating": false
+      },
+      {
+        "name": "gan_connections_list",
+        "mutating": false
+      }
+    ],
+    "deployment": [
+      {
+        "name": "project_manifest",
+        "mutating": false
+      },
+      {
+        "name": "project_export",
+        "mutating": false
+      }
+    ],
+    "devtools": [
+      {
+        "name": "project_dependency_graph",
+        "mutating": false
+      },
+      {
+        "name": "view_dependency_graph",
+        "mutating": false
+      }
+    ],
+    "deploy_and_search_listed_on_same_page_provider_to_confirm_at_runtime": [
+      {
+        "name": "deploy_export_for_git",
+        "mutating": false
+      },
+      {
+        "name": "deploy_diff",
+        "mutating": false
+      },
+      {
+        "name": "deploy_apply",
+        "mutating": true,
+        "note": "rollback on failure; optional sha256 of the zip; does not validate script or JSON content the way project_resource_write does"
+      },
+      {
+        "name": "ref_search",
+        "mutating": false
+      },
+      {
+        "name": "ref_usages",
+        "mutating": false
+      },
+      {
+        "name": "view_patch",
+        "mutating": true,
+        "note": "keeps null-valued keys"
+      }
+    ],
+    "perspective": [
+      {
+        "name": "view_bindings",
+        "mutating": false,
+        "purpose": "static analysis of view.json"
+      }
+    ],
+    "perspective-runtime": {
+      "registered_only_when": "Perspective module is installed",
+      "tools": [
+        {
+          "name": "list_perspective_sessions",
+          "mutating": false
+        },
+        {
+          "name": "get_session_details",
+          "mutating": false,
+          "note": "authentication summary without tokens or raw IdP attributes"
+        },
+        {
+          "name": "close_session",
+          "mutating": true,
+          "risk": "high"
+        },
+        {
+          "name": "send_session_message",
+          "mutating": true,
+          "risk": "high"
+        }
+      ]
+    },
+    "vision": {
+      "disabled_by_default": true,
+      "registered_only_when": "Vision module is installed",
+      "tools": [
+        {
+          "name": "vision_windows_list",
+          "mutating": false
+        },
+        {
+          "name": "vision_window_read",
+          "mutating": false
+        },
+        {
+          "name": "vision_window_xml",
+          "mutating": false
+        }
+      ]
+    },
+    "api": [
+      {
+        "name": "api_discover",
+        "mutating": false,
+        "source": "https://docs.artek.io/mcp/rest-bridge/"
+      },
+      {
+        "name": "api_call",
+        "mutating": true,
+        "note": "classified mutating for every method including GET; uses a configured Gateway API key sent as X-Ignition-API-Token over loopback"
+      }
+    ]
+  },
+  "explicitly_absent_from_the_tags_table": [
+    "No handbook tool named tag_config_write, tag_create, or udt_definition_write appears in the tags provider table reviewed on 2026-11-17.",
+    "tag_write is documented as writing path/value pairs with a quality result, i.e. values, not tag or UDT creation."
+  ],
+  "other_providers_not_fully_enumerated_on_this_page": [
+    "The handbook section 'Other providers' gives examples (user_remove, role_remove, storeforward_quarantine_delete, eam_task_update, export_diagnostics_bundle, audit log, alarm notification rosters) and points to separate pages for db, scripting, and api. This extract does not invent a complete 95-tool inventory.",
+    "Connect-a-client page also names diagnostics tools mcp_status and policy_explain."
+  ]
+}
