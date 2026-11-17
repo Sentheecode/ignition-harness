@@ -50,3 +50,7 @@ flowchart LR
 建议先做项目只读浏览、单个 Perspective View 修改、变更审查、开发 Gateway 发布及真实会话预览。生产发布、任意 Gateway 管理、Vision/Reporting 全覆盖和离线 Perspective 仿真均后置。
 
 质量目标不是“生成了 JSON”，而是用户在同一工作台中完成一次可追溯的 View 修改，并看到对应版本在真实运行时中的结果。
+
+## Catalyst 专项研究对架构的影响
+
+参见 [Catalyst 专项调研](catalyst-research.md)。2027 适配层需区分 Gateway MCP 工具与 Designer 宿主上下文；若前者缺少项目编辑能力，再评估自定义工具或实际 Gateway OpenAPI 提供的资源 API。Gateway Agent/AI Chat 属于可选运行时集成，不作为外部 Harness 的必经推理层。8.x Java 模块不能未经重新构建与验证就用于 2027。

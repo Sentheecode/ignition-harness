@@ -6,6 +6,8 @@
 
 独立开发 Gateway：8.3.9 + 固定版本 Artek-MCP，以及固定 build 的 2027 Beta + Catalyst Core/Agent。配置 Perspective、测试项目、模拟标签与测试身份；记录模块许可和启用状态。无需连接生产设备。
 
+2027 路径另需执行 [Catalyst 专项验证 CAT-01 至 CAT-10](catalyst-research.md#7-catalyst-专项验证清单)，特别验证 Designer 编辑工具是否可从外部 MCP 使用。
+
 ## P0：先回答能否闭环
 
 1. 导出两个服务的 MCP initialize、tools/list（含分页）及 schema，移除凭据后保存 fixture。记录 transport、协议版本、身份权限和模块版本。

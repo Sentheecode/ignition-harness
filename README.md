@@ -15,6 +15,7 @@
 ## 文档
 
 - [调研结论与来源](docs/research.md)
+- [Catalyst 专项调研](docs/catalyst-research.md)
 - [建议架构与方案比较](docs/architecture-proposal.md)
 - [首轮验证与 MVP 路线](docs/validation-roadmap.md)
 

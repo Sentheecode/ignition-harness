@@ -23,6 +23,8 @@
 
 ### Catalyst
 
+补充研究见 [Catalyst 专项调研](catalyst-research.md)，覆盖 Core/Agent、Designer 上下文、认证、AI Chat 与验证矩阵。
+
 应连接 **Services > Catalyst > MCP Servers** 创建的服务；**MCP Connections** 是 Ignition 向外部服务发起连接，方向不同。官方采用 Streamable HTTP；服务器可暴露自定义工具和 `ignition` 分组的内置工具，不能沿用第三方页面“官方没有预置工具”的比较作为当前结论。
 
 官方文档还列出 Catalyst Core、模型提供者配置前提。外部 Harness 是否仍需这些完整配置，按对应 Beta 实机确认；使用 Gateway 提供的 Copy Endpoint URL，勿猜测路径。[S2]
@@ -56,3 +58,7 @@ iframe 是否可用须验证 CSP、frame-ancestors、Cookie、IdP 跳转和 WebS
 - [S4 DeepSeek Harness 源仓库](https://github.com/deepseek-ai/deepseek-harness) — 插件架构参考，复用前检查固定 commit 与许可。
 - [S5 8.3.9 发布说明](https://links.inductiveautomation.com/downloads/releasenotes/8.3.9) — 目标版本依据，不等于第三方模块兼容认证。
 - [S6 8.3 → 2027 升级指南](https://docs.inductiveautomation.com/docs/2027/getting-started/installing-and-upgrading/ignition-8-upgrade-guide/83to2027-upgrade-guide) — 第三方兼容性及迁移注意事项。
+
+## 2026-11-17 专项研究补充
+
+2027 升级指南明确要求 8.x 模块针对 2027 重新构建；Artek 的 8.3.x 支持声明不构成 2027 兼容承诺。Designer Assistant 能力与 Gateway 对外 MCP 工具暴露也须分别验证，不能互相推定。详见专项报告。
