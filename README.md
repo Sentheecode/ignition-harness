@@ -2,7 +2,7 @@
 
 面向 Inductive Automation Ignition 的 AI 工程工作台研究项目。
 
-目标：用自然语言、资源编辑、差异审查与真实运行预览，逐步承接 Ignition Designer 和独立 Perspective 预览窗口的日常工作。
+目标：提供类似 DeepSeek Harness 的桌面工程工作台。左侧 Projects 管理项目与持久登录，直接操作 Gateway 中的 Tag、画面、脚本与配置，并提供实时点位、数据库浏览和内置 Perspective 预览。
 
 **状态：调研阶段。尚无可运行产品，也未完成 Gateway 实机兼容验证。**
 
@@ -13,6 +13,12 @@
 - 不承诺自动支持未来所有版本，也不假定两种 MCP 服务具有相同工具。
 
 ## 文档
+
+优先阅读本轮深入调查与用户确认范围；早期文档保留研究过程，以最新调查的修订为准。
+
+- [用户确认的完整产品范围](docs/product-requirements.md)
+- [深入技术调查：Beta SDK、实际工具、登录与实时链路](docs/technical-investigation.md)
+- [Beta1 SDK 可复核证据](docs/evidence/2027.2.0-beta1-sdk.json)
 
 - [调研结论与来源](docs/research.md)
 - [Catalyst 专项调研](docs/catalyst-research.md)

@@ -2,6 +2,8 @@
 
 本文件是研究阶段的验证建议，不是已经执行的测试，也不是排期承诺。
 
+> 用户已明确最终范围涵盖 Tag、脚本、Gateway 配置与数据库等工程操作。此前的单 View 验证仅是连通性检查，不能代表完整 MVP 验收；完整连续场景见 [深入技术调查第 9 节](technical-investigation.md#9-把验证落到用户的完整任务上)。
+
 ## 需要的环境
 
 独立开发 Gateway：8.3.9 + 固定版本 Artek-MCP，以及固定 build 的 2027 Beta + Catalyst Core/Agent。配置 Perspective、测试项目、模拟标签与测试身份；记录模块许可和启用状态。无需连接生产设备。

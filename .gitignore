@@ -6,3 +6,5 @@ dist/
 artifacts/
 *.gwbk
 *.modl
+__pycache__/
+*.pyc

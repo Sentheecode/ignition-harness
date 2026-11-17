@@ -2,6 +2,8 @@
 
 调研日期：2026-11-17。下列是公开资料研究，不是安装测试报告。供应商能力声明仍需通过具体模块版本与 Gateway build 验证。
 
+> 最新范围与证据见 [需求记录](product-requirements.md) 和 [深入技术调查](technical-investigation.md)。后者补齐 SDK、实际工具参考、长期登录、实时数据与 Gateway 管理链路，并修订早期架构建议。
+
 ## 核心判断
 
 技术上适合构建专用于 Ignition 的 agent harness，但应把“替代开发入口”和“重写 Ignition 平台”区分开。可以逐步统一需求描述、项目理解、资源修改、审查、部署及预览；尚无证据支持仅连接 MCP 就能完整替代 Designer 的所有工作区。

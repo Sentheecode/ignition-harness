@@ -1,0 +1,273 @@
+{
+  "version": "2027.2.0-beta1",
+  "evidence_kind": "public-javadoc-static-inspection",
+  "runtime_verified": false,
+  "artifacts": [
+    {
+      "artifact": "common",
+      "url": "https://nexus.inductiveautomation.com/repository/public/com/inductiveautomation/ignition/common/2027.2.0-beta1/common-2027.2.0-beta1-javadoc.jar",
+      "size_bytes": 19992657,
+      "sha256": "467a3249fcd259c5538b1da92907406b5fb047cd1cd4c4c1fb7a7ef341482964",
+      "classes": [
+        {
+          "qualified_name": "com.inductiveautomation.ignition.common.ai.AiContext",
+          "archive_entry": "com/inductiveautomation/ignition/common/ai/AiContext.html",
+          "signatures": [
+            "List<ModelProviderMetadata> getModelProviders()",
+            "Optional<AiContext.ProvidedModel> getDefaultModel() throws ProviderConfigException, UpstreamModelProviderException",
+            "AiContext.HarnessBuilder newAgenticHarness(String providerName, String modelId, Agent.AgentFactory factory)",
+            "default AiContext.HarnessBuilder newAgenticHarness(AiContext.ProvidedModel providedModel, Agent.AgentFactory factory)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.common.ai.AgenticHarness",
+          "archive_entry": "com/inductiveautomation/ignition/common/ai/AgenticHarness.html",
+          "signatures": [
+            "UUID getId()",
+            "String send(String userMessage) throws UpstreamModelProviderException",
+            "<T> T send(String userMessage, Class<T> resultType) throws UpstreamModelProviderException",
+            "void clearMemory()",
+            "void rewind(int turns)",
+            "void close()"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.common.ai.CallableTool",
+          "archive_entry": "com/inductiveautomation/ignition/common/ai/CallableTool.html",
+          "signatures": [
+            "ToolDescription getDescription()",
+            "default @Nullable String namespace()",
+            "PermissionsConfig permissions()",
+            "Object invoke(Map<String,Object> arguments) throws Exception"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.common.ai.AiActor",
+          "archive_entry": "com/inductiveautomation/ignition/common/ai/AiActor.html",
+          "signatures": [
+            "static final AiActor ANONYMOUS",
+            "boolean isAuthorizedFor(PermissionsConfig permissions)",
+            "String descriptor()"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.common.ai.Tools",
+          "archive_entry": "com/inductiveautomation/ignition/common/ai/Tools.html",
+          "signatures": [
+            "public static List<CallableTool> fromAnnotated(Object... owners)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.common.tags.model.TagManager",
+          "archive_entry": "com/inductiveautomation/ignition/common/tags/model/TagManager.html",
+          "signatures": [
+            "static final String DATA_SOURCE_OPC",
+            "static final String BROWSE_LOCAL_SYSTEM",
+            "CompletableFuture<Results<BrowseElement>> browseTagDataSourcesAsync(String provider, BrowseElement root, BrowseFilter filter)",
+            "CompletableFuture<ConfigurationPropertyModel> getTagGroupConfigModelAsync(String provider)",
+            "CompletableFuture<ConfigurationPropertyModel> getTagConfigModelAsync(String provider)",
+            "CompletableFuture<List<TagGroupConfiguration>> getTagGroupsAsync(String provider)",
+            "CompletableFuture<List<QualityCode>> moveTagsAsync(List<TagPath> tags, TagPath destination, boolean copy, CollisionPolicy collisionPolicy, SecurityContext securityContext)",
+            "default CompletableFuture<List<QualityCode>> moveTagsAsync(List<TagPath> tags, TagPath destination, boolean copy, CollisionPolicy collisionPolicy)",
+            "CompletableFuture<Results<NodeDescription>> browseAsync(TagPath tagPath, BrowseFilter browseFilter)",
+            "CompletableFuture<Results<NodeDescription>> browseAsync(TagPath tagPath, BrowseFilter browseFilter, SecurityContext securityContext)",
+            "default CompletableFuture<List<QualifiedValue>> readAsync(List<TagPath> tagPaths)",
+            "CompletableFuture<List<QualifiedValue>> readAsync(List<TagPath> tagPaths, SecurityContext securityContext)",
+            "default CompletableFuture<List<WriteResult>> writeAsync(List<TagPath> tagPaths, List<Object> values)",
+            "CompletableFuture<List<WriteResult>> writeAsync(List<TagPath> tagPaths, List<Object> values, SecurityContext securityContext)",
+            "default CompletableFuture<List<QualityCode>> reinitializeTags(List<TagPath> tagPaths)",
+            "default CompletableFuture<Void> subscribeAsync(TagPath tagPath, TagChangeListener listener)",
+            "CompletableFuture<Void> subscribeAsync(List<TagPath> tagPaths, List<TagChangeListener> listeners)",
+            "default CompletableFuture<Void> unsubscribeAsync(TagPath tagPath, TagChangeListener listener)",
+            "CompletableFuture<Void> unsubscribeAsync(List<TagPath> tagPaths, List<TagChangeListener> listeners)",
+            "CompletableFuture<TagDiagnostics> getDiagnosticsAsync(TagPath path)",
+            "CompletableFuture<List<QualityCode>> importTagsAsync(TagPath basePath, String importText, String importType, CollisionPolicy collisionPolicy)",
+            "CompletableFuture<List<QualityCode>> importTagsAsync(TagPath basePath, String importText, String importType, CollisionPolicy collisionPolicy, SecurityContext securityContext)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.common.tags.model.TagProvider",
+          "archive_entry": "com/inductiveautomation/ignition/common/tags/model/TagProvider.html",
+          "signatures": [
+            "CompletableFuture<Results<BrowseElement>> browseTagDataSourcesAsync(BrowseElement root, BrowseFilter filter)",
+            "CompletableFuture<Results<NodeDescription>> browseAsync(TagPath tagPath, BrowseFilter filter)",
+            "CompletableFuture<Results<NodeDescription>> browseAsync(TagPath tagPath, BrowseFilter filter, SecurityContext securityContext)",
+            "CompletableFuture<List<QualifiedValue>> readAsync(List<TagPath> tagPaths, SecurityContext securityContext)",
+            "CompletableFuture<List<WriteResult>> writeAsync(List<TagPath> tagPaths, List<QualifiedValue> values, SecurityContext securityContext)",
+            "CompletableFuture<List<TagConfigurationModel>> getTagConfigsAsync(TagConfigQuery query)",
+            "CompletableFuture<List<QualityCode>> saveTagConfigsAsync(List<TagConfiguration> tagEdits, CollisionPolicy collisionPolicy, SecurityContext securityContext)",
+            "default CompletableFuture<List<QualityCode>> saveTagConfigsAsync(List<TagConfiguration> tagEdits, CollisionPolicy collisionPolicy)",
+            "CompletableFuture<List<QualityCode>> removeTagConfigsAsync(List<TagPath> tagPaths, SecurityContext securityContext)",
+            "default CompletableFuture<List<QualityCode>> removeTagConfigsAsync(List<TagPath> tagPaths)",
+            "CompletableFuture<List<TagGroupConfiguration>> getTagGroupsAsync()",
+            "CompletableFuture<List<QualityCode>> saveTagGroupsAsync(List<TagGroupConfiguration> tagGroups, SecurityContext securityContext)",
+            "default CompletableFuture<List<QualityCode>> saveTagGroupsAsync(List<TagGroupConfiguration> tagGroups)",
+            "CompletableFuture<List<QualityCode>> removeTagGroupsAsync(List<String> tagGroupNames, SecurityContext securityContext)",
+            "default CompletableFuture<List<QualityCode>> removeTagGroupsAsync(List<String> tagGroupNames)",
+            "CompletableFuture<TagProviderProps> getPropertiesAsync()",
+            "CompletableFuture<ConfigurationPropertyModel> getTagGroupConfigModelAsync()",
+            "CompletableFuture<ConfigurationPropertyModel> getTagConfigModelAsync()",
+            "CompletableFuture<TagDiagnostics> getDiagnosticsAsync(TagPath path)",
+            "CompletableFuture<TagProviderInformation> getStatusInformation()",
+            "CompletableFuture<List<QualityCode>> importTagsAsync(TagPath basePath, String importText, String importType, CollisionPolicy cp)",
+            "CompletableFuture<List<QualityCode>> importTagsAsync(TagPath basePath, String importText, String importType, CollisionPolicy cp, SecurityContext securityContext)",
+            "CompletableFuture<List<QualityCode>> importTagsZippedAsync(TagPath basePath, byte[] importData, String importType, CollisionPolicy cp, SecurityContext security)",
+            "String getName()",
+            "default CompletableFuture<List<QualityCode>> reinitializeTagsAsync(List<TagPath> paths)",
+            "void requestTagGroupExecution(String tagGroup)"
+          ]
+        }
+      ]
+    },
+    {
+      "artifact": "gateway-api",
+      "url": "https://nexus.inductiveautomation.com/repository/public/com/inductiveautomation/ignition/gateway-api/2027.2.0-beta1/gateway-api-2027.2.0-beta1-javadoc.jar",
+      "size_bytes": 10275301,
+      "sha256": "83466d37a0e15f1b85f59db834220c0851bcc59fdd0c57907a52ac60456bc2bb",
+      "classes": [
+        {
+          "qualified_name": "com.inductiveautomation.ignition.gateway.ai.GatewayAiContext",
+          "archive_entry": "com/inductiveautomation/ignition/gateway/ai/GatewayAiContext.html",
+          "signatures": [
+            "DiagnosticDigestManager getDiagnosticDigestManager()",
+            "boolean hasModelProviders()",
+            "List<McpConnectionInfo> getMcpConnections()",
+            "com.inductiveautomation.ignition.common.ai.McpToolSource mcpToolsFor(Collection<String> connectionNames)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.gateway.resourcecollection.ResourceCollectionManager",
+          "archive_entry": "com/inductiveautomation/ignition/gateway/resourcecollection/ResourceCollectionManager.html",
+          "signatures": [
+            "static final String DEFAULT_NAME_PATTERN",
+            "void addListener(com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionListener listener)",
+            "void removeListener(com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionListener listener)",
+            "default boolean isMutable(String collectionName)",
+            "void create(String name, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionManifest manifest, List<com.inductiveautomation.ignition.common.resourcecollection.Resource> resources) throws IllegalArgumentException, IOException, com.inductiveautomation.ignition.common.resourcecollection.NameInUseException",
+            "default String createSafe(String name, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionManifest manifest, List<com.inductiveautomation.ignition.common.resourcecollection.Resource> resources) throws IllegalArgumentException, IOException",
+            "default String createSafe(String name, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionManifest manifest, List<com.inductiveautomation.ignition.common.resourcecollection.Resource> resources, String namePattern) throws IllegalArgumentException, IOException",
+            "void createOrReplace(String name, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionManifest manifest, List<com.inductiveautomation.ignition.common.resourcecollection.Resource> resources) throws IllegalArgumentException, IOException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionImmutableException",
+            "default String copy(String name, String newName) throws IOException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionNotFoundException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionInvalidException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionImmutableException",
+            "void delete(String name) throws IOException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionNotFoundException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionImmutableException",
+            "default Optional<com.inductiveautomation.ignition.common.resourcecollection.RuntimeResourceCollection> find(String name)",
+            "default Optional<com.inductiveautomation.ignition.common.resourcecollection.RuntimeResourceCollection> find(@NonNull String name, int applicationScope)",
+            "Optional<com.inductiveautomation.ignition.common.resourcecollection.RuntimeResourceCollection> find(@NonNull String name, com.inductiveautomation.ignition.common.resourcecollection.ResourceFilter resourceFilter)",
+            "Optional<com.inductiveautomation.ignition.common.resourcecollection.Resource> getResource(String collectionName, com.inductiveautomation.ignition.common.resourcecollection.ResourcePath resourcePath)",
+            "Set<String> getDefiningCollectionNames(com.inductiveautomation.ignition.common.resourcecollection.ResourcePath resourcePath)",
+            "void export(String name, OutputStream destination) throws IOException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionNotFoundException, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionImmutableException",
+            "Map<String, com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionManifest> getManifests()",
+            "List<String> getNames()",
+            "@CheckReturnValue default CompletableFuture<Void> push(List<com.inductiveautomation.ignition.common.resourcecollection.ChangeOperation> changeOperations) throws com.inductiveautomation.ignition.common.resourcecollection.PushException",
+            "@CheckReturnValue CompletableFuture<Void> push(PushOperation pushOperation) throws com.inductiveautomation.ignition.common.resourcecollection.PushException",
+            "PartialPushResult pushPartial(PushOperation operation)",
+            "List<com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionDiff.AbsoluteDiff> pull(List<com.inductiveautomation.ignition.common.resourcecollection.Snapshot> snapshots) throws com.inductiveautomation.ignition.common.resourcecollection.PullException",
+            "List<com.inductiveautomation.ignition.common.resourcecollection.ResourceCollectionDiff.AbsoluteDiff> pull(List<com.inductiveautomation.ignition.common.resourcecollection.Snapshot> snapshots, com.inductiveautomation.ignition.common.resourcecollection.ResourceFilter filter) throws com.inductiveautomation.ignition.common.resourcecollection.PullException",
+            "@CheckReturnValue CompletableFuture<Void> requestScan()"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.gateway.resourcecollection.PartialPushResult",
+          "archive_entry": "com/inductiveautomation/ignition/gateway/resourcecollection/PartialPushResult.html",
+          "signatures": [
+            "public PartialPushResult(List<com.inductiveautomation.ignition.common.resourcecollection.ChangeOperation> successfulChanges, List<PartialPushResult.FailedChangeOperation> failedChanges, CompletableFuture<Void> notificationFuture)",
+            "public final String toString()",
+            "public final int hashCode()",
+            "public final boolean equals(Object o)",
+            "public List<com.inductiveautomation.ignition.common.resourcecollection.ChangeOperation> successfulChanges()",
+            "public List<PartialPushResult.FailedChangeOperation> failedChanges()",
+            "public CompletableFuture<Void> notificationFuture()"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.gateway.tags.model.GatewayTagManager",
+          "archive_entry": "com/inductiveautomation/ignition/gateway/tags/model/GatewayTagManager.html",
+          "signatures": [
+            "TagConfigurationManager getConfigManager()",
+            "@Nullable com.inductiveautomation.ignition.common.tags.model.TagProvider getTagProvider(@NonNull String name)",
+            "@NonNull List<com.inductiveautomation.ignition.common.tags.model.TagProvider> getTagProviders()",
+            "List<String> getTagProviderNames()",
+            "ManagedTagProvider getOrCreateManagedProvider(ManagedTagProviderConfiguration config)",
+            "ManagedTagProvider getOrCreateManagedProvider(ManagedTagProviderConfiguration config, boolean forceReCreation, boolean startProvider)",
+            "@Nullable ManagedTagProvider getManagedProvider(String name)",
+            "GatewaySystemTags getSystemTags()",
+            "boolean restartTagProvider(@NonNull String name)",
+            "void addTagStructureListener(String provider, TagStructureListener listener)",
+            "void removeTagStructureListener(String provider, TagStructureListener listener)",
+            "int getLicensedTagCount()",
+            "int getLicensedTagLimit()",
+            "CompletableFuture<List<com.inductiveautomation.ignition.common.model.values.QualityCode>> pasteTags(List<com.inductiveautomation.ignition.common.tags.config.TagConfigurationModel> tagConfigs, com.inductiveautomation.ignition.common.tags.model.TagPath destination, boolean removeOriginal, com.inductiveautomation.ignition.common.tags.model.SecurityContext securityContext)",
+            "default CompletableFuture<List<com.inductiveautomation.ignition.common.model.values.QualityCode>> pasteTags(List<com.inductiveautomation.ignition.common.tags.config.TagConfigurationModel> tagConfigs, com.inductiveautomation.ignition.common.tags.model.TagPath destination, boolean removeOriginal)",
+            "CompletableFuture<List<com.inductiveautomation.ignition.common.model.values.QualityCode>> renameTag(com.inductiveautomation.ignition.common.tags.model.TagPath tag, String newName, com.inductiveautomation.ignition.common.tags.config.CollisionPolicy collisionPolicy, com.inductiveautomation.ignition.common.tags.model.SecurityContext securityContext)",
+            "default CompletableFuture<List<com.inductiveautomation.ignition.common.model.values.QualityCode>> renameTag(com.inductiveautomation.ignition.common.tags.model.TagPath tag, String newName, com.inductiveautomation.ignition.common.tags.config.CollisionPolicy collisionPolicy)",
+            "default CompletableFuture<com.inductiveautomation.ignition.common.browsing.Results<com.inductiveautomation.ignition.common.tags.browsing.NodeDescription>> browseAsync(com.inductiveautomation.ignition.common.tags.model.TagPath tagPath, com.inductiveautomation.ignition.common.browsing.BrowseFilter browseFilter)",
+            "default CompletableFuture<List<com.inductiveautomation.ignition.common.model.values.QualityCode>> importTagsAsync(com.inductiveautomation.ignition.common.tags.model.TagPath basePath, String importText, String importType, com.inductiveautomation.ignition.common.tags.config.CollisionPolicy collisionPolicy)"
+          ]
+        }
+      ]
+    },
+    {
+      "artifact": "designer",
+      "url": "https://nexus.inductiveautomation.com/repository/public/com/inductiveautomation/ignition/designer/2027.2.0-beta1/designer-2027.2.0-beta1-javadoc.jar",
+      "size_bytes": 11844741,
+      "sha256": "3d7bae057942aa7027e88d82adbf5d703e77086fc06e471be9e504d237ff1afe",
+      "classes": [
+        {
+          "qualified_name": "com.inductiveautomation.ignition.designer.ai.DesignerToolFactory",
+          "archive_entry": "com/inductiveautomation/ignition/designer/ai/DesignerToolFactory.html",
+          "signatures": [
+            "com.inductiveautomation.ignition.common.ai.ToolBundle systemLibrary()",
+            "com.inductiveautomation.ignition.common.ai.ToolBundle userLibrary()",
+            "com.inductiveautomation.ignition.common.ai.ToolBundle tagConfigRead()",
+            "com.inductiveautomation.ignition.common.ai.ToolBundle opcBrowse()",
+            "com.inductiveautomation.ignition.common.ai.ToolBundle datasource()",
+            "com.inductiveautomation.ignition.common.ai.ToolBundle gatewayConfig()",
+            "com.inductiveautomation.ignition.common.ai.ToolBundle project()",
+            "com.inductiveautomation.ignition.common.ai.ToolBundle designerState()"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.designer.ai.tool.DesignableProjectTools",
+          "archive_entry": "com/inductiveautomation/ignition/designer/ai/tool/DesignableProjectTools.html",
+          "signatures": [
+            "public DesignableProjectTools(DesignableProject project)",
+            "public String getProjectMetadata()",
+            "public String getResourcesForType(String typeString)",
+            "public String browse(String typeString, String folderPath)",
+            "public String readResourceMetadata(String typeString, String path)",
+            "public String readData(String typeString, String path, String dataKey)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.designer.ai.tool.DesignerStateTools",
+          "archive_entry": "com/inductiveautomation/ignition/designer/ai/tool/DesignerStateTools.html",
+          "signatures": [
+            "public DesignerStateTools(DesignerContext context)",
+            "public String getActiveWorkspace()",
+            "public String listOpenResources()",
+            "public String getProjectDefaults()"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.designer.ai.tool.GatewayConfigTools",
+          "archive_entry": "com/inductiveautomation/ignition/designer/ai/tool/GatewayConfigTools.html",
+          "signatures": [
+            "public GatewayConfigTools(DesignerContext context)",
+            "public List<com.inductiveautomation.ignition.common.config.ai.ConfigTypeInfo> listConfigTypes()",
+            "public String describeConfigType(@Nullable String moduleId, @Nullable String typeId)",
+            "public List<com.inductiveautomation.ignition.common.config.ai.ConfigResourceBrief> listConfigResources(@Nullable String moduleId, @Nullable String typeId)",
+            "public String readConfigResource(@Nullable String moduleId, @Nullable String typeId, @Nullable String name)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.designer.ai.embed.ReplyRenderer",
+          "archive_entry": "com/inductiveautomation/ignition/designer/ai/embed/ReplyRenderer.html",
+          "signatures": [
+            "ReplyView renderStatement(String description)",
+            "ReplyView renderSuggestion(String description, String value)",
+            "default @Nullable String getSuggestionFailure(String value)"
+          ]
+        }
+      ]
+    }
+  ]
+}

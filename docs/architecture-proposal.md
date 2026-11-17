@@ -1,4 +1,6 @@
-# 架构建议（待讨论，非已批准实现规格）
+# 架构建议（早期草案，非已批准实现规格）
+
+> 2026-11-17 更新：用户已澄清完整工程工作台范围，见 [需求记录](product-requirements.md)。本草案关于独立工作台优先、仅修改单 View 的初期建议不作为最终产品范围。最新研究基于实际 SDK 与 DSH 源码，见 [深入技术调查](technical-investigation.md)，优先评估 DSH distribution + 领域服务及必要的 Gateway companion。
 
 ## 方案比较
 
