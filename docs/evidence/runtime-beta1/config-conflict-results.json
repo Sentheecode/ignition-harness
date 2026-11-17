@@ -1,0 +1,41 @@
+{
+  "update": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "changes": [
+        {
+          "name": "HarnessLabDB",
+          "type": "ignition/database-connection",
+          "collection": "core",
+          "newSignature": "dbd4d2b3f736b2cda8b80c161c1b1ef1ec4a211727f696d72e20bb36ad0f2732"
+        }
+      ],
+      "problem": null
+    }
+  },
+  "stale_update": {
+    "status": 409,
+    "body": {
+      "success": false,
+      "changes": [],
+      "problem": {
+        "message": "The signature supplied for 'ignition/database-connection/HarnessLabDB' in collection 'core' is not its current one — the resource may have changed since it was loaded. Reload it and try again."
+      }
+    }
+  },
+  "read_after": {
+    "status": 200,
+    "poolMaxActive": 4,
+    "healthchecks": {
+      "status": {
+        "name": "databases.connection-HarnessLabDB.status",
+        "result": {
+          "healthy": true,
+          "time": 1794927767784,
+          "message": "Valid"
+        }
+      }
+    }
+  }
+}

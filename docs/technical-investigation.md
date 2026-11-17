@@ -1,6 +1,6 @@
 # 深入技术调查：完整工程工作台如何连接 Ignition
 
-日期：2026-11-17。目标：回答 [REQ-01～REQ-10](product-requirements.md)，而不是重复产品宣传页。当前证据包括：实际下载的 **2027.2.0-beta1 SDK Javadoc**、固定 commit 的官方示例与 DeepSeek Harness 代码、Artek 工具手册、官方 MCP 配置截图。**没有启动或配置 Gateway，没有完成 MCP initialize/tools/list 或资源写入运行测试。**
+日期：2026-11-17。目标：回答 [REQ-01～REQ-10](product-requirements.md)，而不是重复产品宣传页。当前证据包括：实际下载的 **2027.2.0-beta1 SDK Javadoc**、固定 commit 的官方示例与 DeepSeek Harness 代码、Artek 工具手册、官方 MCP 配置截图。本文记录静态调查阶段；随后已完成真实 Gateway、MCP、Tag、View/脚本热更新及数据库实验，见 [运行验证报告](runtime-validation-2027-beta1.md)。
 
 ## 1. 本轮纠正的核心判断
 
@@ -24,7 +24,7 @@
 | gateway-api | 10,275,301 | `83466d37a0e15f1b85f59db834220c0851bcc59fdd0c57907a52ac60456bc2bb` |
 | designer | 11,844,741 | `3d7bae057942aa7027e88d82adbf5d703e77086fc06e471be9e504d237ff1afe` |
 
-[机器可读证据](evidence/2027.2.0-beta1-sdk.json) 记录原始下载 URL、归档内路径和 16 个重点类的公开签名。[采集脚本](../research/collect_sdk_evidence.py) 可重复下载和提取；不包含供应商实现源码或整个 Javadoc 的再分发。SHA 标识本次拿到的文件，不代替供应商签名验证。
+[机器可读证据](evidence/2027.2.0-beta1-sdk.json) 记录原始下载 URL、归档内路径和 19 个重点类的公开签名。[采集脚本](../research/collect_sdk_evidence.py) 可重复下载和提取；不包含供应商实现源码或整个 Javadoc 的再分发。SHA 标识本次拿到的文件，不代替供应商签名验证。
 
 官方 SDK 示例固定在 commit [`436cda89`](https://github.com/inductiveautomation/ignition-sdk-examples/tree/436cda89fbae09b4550ed1eeba189cc63a71d09e)。其 `project-resource/gradle/libs.versions.toml` 指定 Beta1 和 Java 25，`build.gradle.kts` 指定最低平台 `2027.2.0`。同目录 `docker-compose.yml` 却仍为 `8.1.26`，因此不可未经修改直接作为 Beta 测试环境。
 
@@ -189,3 +189,11 @@ flowchart TB
 6. Designer 或另一个工作台同时修改资源，旧签名提交被拒绝；超时写入通过读回判定，不覆盖其他人的修改。
 
 **本轮已完成的是静态接口与源码调查，不是以上运行验收。**剩余工作的阻塞已从“不了解接口”缩小为：Beta1 实际 MCP 清单、外部工程登录/续期协议、Companion 是否必要、跨两个目标版本的写入/刷新运行验证。这些问题未解决前，不应开始堆砌产品页面。
+
+## 10. 运行验证进行中：补充的登录接口依据
+
+新增检查的 Beta1 Javadoc 包括 `WebUiSession`、`WebUiSessionManager` 和 `RequestContext`，已加入制品证据。`WebUiSession` 提供 `getUserContext/getCsrfToken` 以及 `SESSION_ACCESS/SESSION_READ/SESSION_WRITE` 访问控制策略；`WebUiSessionManager.findSession(RequestContext)` 可以从请求找用户 Web 会话。
+
+这使“复用 Gateway 交互登录并在扩展路由检查用户权限”有了具体 SDK 依据，但不证明它与 Designer 登录权限完全等价。运行测试应比较：无凭据、Web cookie、API token 对实际工程 API 和 MCP endpoint 的接受情况，并确认 CSRF 规则。若原生路由已足够，优先复用，避免先假定必须开发 companion。
+
+当前正在准备隔离 Beta1 Gateway；本节不是运行通过记录。最终实测结果另行记录。

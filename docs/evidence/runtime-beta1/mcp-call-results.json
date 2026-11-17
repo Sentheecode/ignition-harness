@@ -1,0 +1,117 @@
+{
+  "initialize": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {
+      "tools": {
+        "listChanged": true
+      }
+    },
+    "serverInfo": {
+      "name": "HarnessLab",
+      "title": "Harness Lab",
+      "version": "1.0.0"
+    }
+  },
+  "calls": {
+    "providers": {
+      "content": [
+        {
+          "text": "{\"providers\":[\"default\",\"System\"]}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "providers": [
+          "default",
+          "System"
+        ]
+      }
+    },
+    "query": {
+      "content": [
+        {
+          "text": "{\"results\":[{\"fullPath\":\"[default]HarnessLab/Temperature\",\"tagKind\":\"memory\",\"dataType\":\"Float8\",\"typeId\":null}],\"continuationPoint\":null}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "results": [
+          {
+            "fullPath": "[default]HarnessLab/Temperature",
+            "tagKind": "memory",
+            "dataType": "Float8"
+          }
+        ]
+      }
+    },
+    "realtime": {
+      "content": [
+        {
+          "text": "{\"results\":[{\"quality\":192,\"timestamp\":1794927072182,\"value\":42.5,\"valueType\":\"Float8\"}]}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "results": [
+          {
+            "quality": 192,
+            "timestamp": 1794927072182,
+            "value": 42.5,
+            "valueType": "Float8"
+          }
+        ]
+      }
+    },
+    "diagnostics": {
+      "content": [
+        {
+          "text": "{\"Deadband\":{\"Last value\":{\"value\":{\"value\":42.5,\"quality\":192,\"timestamp\":1794927072182},\"level\":\"INFO\"},\"Limit\":{\"value\":1.0E-4,\"level\":\"INFO\"}},\"Last published value\":{\"value\":{\"value\":42.5,\"quality\":192,\"timestamp\":1794927072182},\"level\":\"INFO\"},\"Tag id\":{\"value\":\"f73ceeda-0d21-3f82-9b0e-0112ed093bd3\",\"level\":\"INFO\"},\"Tag Definition Valid?\":{\"value\":\"true\",\"level\":\"INFO\"},\"Is Leased\":{\"value\":\"false\",\"level\":\"INFO\"}}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "Deadband": {
+          "Last value": {
+            "value": {
+              "value": 42.5,
+              "quality": 192,
+              "timestamp": 1794927072182
+            },
+            "level": "INFO"
+          },
+          "Limit": {
+            "value": 0.0001,
+            "level": "INFO"
+          }
+        },
+        "Last published value": {
+          "value": {
+            "value": 42.5,
+            "quality": 192,
+            "timestamp": 1794927072182
+          },
+          "level": "INFO"
+        },
+        "Tag id": {
+          "value": "f73ceeda-0d21-3f82-9b0e-0112ed093bd3",
+          "level": "INFO"
+        },
+        "Tag Definition Valid?": {
+          "value": "true",
+          "level": "INFO"
+        },
+        "Is Leased": {
+          "value": "false",
+          "level": "INFO"
+        }
+      }
+    }
+  },
+  "invalid_session": {
+    "status": 404
+  }
+}

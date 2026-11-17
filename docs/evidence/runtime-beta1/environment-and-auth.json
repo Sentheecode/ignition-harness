@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-17",
+  "gateway_version": "2027.2.0-beta1",
+  "gateway_build": "2026110221",
+  "runtime": "native Linux files extracted from a SHA-256-verified official OCI layer; Docker vfs registration failed with ENOSPC",
+  "model_providers_configured": 0,
+  "authentication_observations": {
+    "anonymous_openapi": 403,
+    "web_session_openapi": 200,
+    "web_session_api_get": 200,
+    "web_session_missing_csrf_post": 403,
+    "anonymous_mcp_initialize": 403,
+    "web_session_mcp_initialize": 403,
+    "api_token_mcp_initialize": 200,
+    "web_session_after_browser_relaunch": 200,
+    "web_session_after_gateway_restart": 401
+  },
+  "scope_limits": [
+    "One Standard-edition lab Gateway, synthetic Memory Tags and SQLite data",
+    "No SAML/OIDC external provider, MFA, production device, redundancy, or full Harness UI validation",
+    "Database rows rendered through project script and Perspective; not a generic database RPC API test"
+  ]
+}

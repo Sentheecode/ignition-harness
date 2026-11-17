@@ -1,0 +1,8 @@
+{
+  "initial_tool_count": 1,
+  "after_expiry": {
+    "http_status": 404
+  },
+  "elapsed_seconds": 66,
+  "reinitialized_tool_count": 1
+}

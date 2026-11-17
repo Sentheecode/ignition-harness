@@ -1,0 +1,89 @@
+{
+  "providers": {
+    "status": 200,
+    "provider_names": [
+      "System",
+      "default"
+    ]
+  },
+  "missing_csrf_invalid_body": {
+    "status": 403,
+    "body": {
+      "content_type": "text/html;charset=iso-8859-1",
+      "size": 340
+    }
+  },
+  "valid_csrf_invalid_body": {
+    "status": 400,
+    "body": {
+      "content_type": "text/html;charset=iso-8859-1",
+      "size": 814
+    }
+  },
+  "create": {
+    "status": 200,
+    "body": {
+      "successCount": 1,
+      "failureCount": 0,
+      "failures": []
+    }
+  },
+  "read_initial": {
+    "status": 200,
+    "body": {
+      "results": [
+        {
+          "value": 21.5,
+          "quality": {
+            "code": 192
+          },
+          "timestamp": "2026-11-17T08:18:40.450Z"
+        }
+      ]
+    }
+  },
+  "edit_config": {
+    "status": 200,
+    "body": {
+      "successCount": 1,
+      "failureCount": 0,
+      "failures": []
+    }
+  },
+  "write_value": {
+    "status": 200,
+    "body": {
+      "results": [
+        {
+          "code": 192
+        }
+      ]
+    }
+  },
+  "read_after": {
+    "status": 200,
+    "body": {
+      "results": [
+        {
+          "value": 42.5,
+          "quality": {
+            "code": 192
+          },
+          "timestamp": "2026-11-17T08:18:40.488Z"
+        }
+      ]
+    }
+  },
+  "read_config": {
+    "status": 200,
+    "body": {
+      "valueSource": "memory",
+      "dataType": "Float8",
+      "name": "Temperature",
+      "defaultValue": 21.5,
+      "value": 42.5,
+      "tagType": "AtomicTag",
+      "engUnit": "C"
+    }
+  }
+}

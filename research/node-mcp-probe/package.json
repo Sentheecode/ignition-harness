@@ -1,0 +1,8 @@
+{
+  "name": "ignition-harness-mcp-research-probe",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Research-only compatibility probe using the MCP client version pinned by the inspected DSH commit",
+  "scripts": {"probe": "node probe.cjs"},
+  "dependencies": {"@modelcontextprotocol/client": "2.2.0"}
+}

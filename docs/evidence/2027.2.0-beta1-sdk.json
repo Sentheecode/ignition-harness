@@ -136,6 +136,46 @@
           ]
         },
         {
+          "qualified_name": "com.inductiveautomation.ignition.gateway.web.session.WebUiSession",
+          "archive_entry": "com/inductiveautomation/ignition/gateway/web/session/WebUiSession.html",
+          "signatures": [
+            "static final String CSRF_TOKEN_HEADER",
+            "static final AccessControlStrategy SESSION_ACCESS",
+            "static final AccessControlStrategy SESSION_READ",
+            "static final AccessControlStrategy SESSION_WRITE",
+            "com.inductiveautomation.ignition.common.auth.web.WebAuthUserContext getUserContext()",
+            "String getCsrfToken()",
+            "static Optional<? extends WebUiSession> find(RequestContext requestContext)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.gateway.web.session.WebUiSessionManager",
+          "archive_entry": "com/inductiveautomation/ignition/gateway/web/session/WebUiSessionManager.html",
+          "signatures": [
+            "Collection<? extends WebUiSession> getSessions()",
+            "Optional<? extends WebUiSession> getSession(String id)",
+            "Optional<? extends WebUiSession> findSession(RequestContext requestContext)"
+          ]
+        },
+        {
+          "qualified_name": "com.inductiveautomation.ignition.gateway.dataroutes.RequestContext",
+          "archive_entry": "com/inductiveautomation/ignition/gateway/dataroutes/RequestContext.html",
+          "signatures": [
+            "public RequestContext(jakarta.servlet.http.HttpServletRequest request, String path)",
+            "public GatewayContext getGatewayContext()",
+            "public jakarta.servlet.http.HttpServletRequest getRequest()",
+            "public String getPath()",
+            "public HttpMethod getMethod()",
+            "public String readBody() throws IOException",
+            "public @Nullable String getParameter(String name)",
+            "public void putParameter(String name, String value)",
+            "public URI getRequestUri()",
+            "public URI getRelativeRequestUri()",
+            "public String getActor()",
+            "public com.google.common.collect.ImmutableCollection<String> getSecurityZones()"
+          ]
+        },
+        {
           "qualified_name": "com.inductiveautomation.ignition.gateway.resourcecollection.ResourceCollectionManager",
           "archive_entry": "com/inductiveautomation/ignition/gateway/resourcecollection/ResourceCollectionManager.html",
           "signatures": [

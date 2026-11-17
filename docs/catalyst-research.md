@@ -4,6 +4,8 @@
 
 > 深入补充：后续已实际取得 `2027.2.0-beta1` SDK Javadoc，定位到具体 AI、资源 push/pull 和 Tag 订阅 API，并查看 MCP 配置截图。见 [深入技术调查](technical-investigation.md) 与 [制品证据](evidence/2027.2.0-beta1-sdk.json)。本文的产品手册研究不能代替固定版本接口证据。
 
+> 已完成后续 [Beta1 实际运行验证](runtime-validation-2027-beta1.md)。零模型提供者下的 MCP 工具可用、Web/MCP 认证差异和真实工具清单，以该实测报告为准。
+
 ## 1. 产品结构
 
 | 部件 | 官方定位 | 对 Harness 的意义 |

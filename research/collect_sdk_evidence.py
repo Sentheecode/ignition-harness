@@ -20,6 +20,8 @@ CLASSES = {
     },
     'gateway-api': {
         'com/inductiveautomation/ignition/gateway/ai': ['GatewayAiContext'],
+        'com/inductiveautomation/ignition/gateway/web/session': ['WebUiSession', 'WebUiSessionManager'],
+        'com/inductiveautomation/ignition/gateway/dataroutes': ['RequestContext'],
         'com/inductiveautomation/ignition/gateway/resourcecollection': ['ResourceCollectionManager', 'PartialPushResult'],
         'com/inductiveautomation/ignition/gateway/tags/model': ['GatewayTagManager'],
     },

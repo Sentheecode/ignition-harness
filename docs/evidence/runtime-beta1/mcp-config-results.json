@@ -1,0 +1,84 @@
+{
+  "providers": {
+    "status": 200,
+    "body": {
+      "items": [],
+      "metadata": {
+        "total": 0,
+        "matching": 0,
+        "limit": -1,
+        "offset": 0
+      }
+    }
+  },
+  "create_server": {
+    "status": 200,
+    "body": {
+      "success": true,
+      "changes": [
+        {
+          "name": "HarnessLab",
+          "type": "com.inductiveautomation.catalyst.agent/mcp-server-host",
+          "collection": "core",
+          "newSignature": "0d6605752b393011a2ab40930eab140b0a93f2396c32f937a3517d8dfa50376c"
+        }
+      ],
+      "problem": null
+    }
+  },
+  "server": {
+    "status": 200,
+    "body": {
+      "type": "com.inductiveautomation.catalyst.agent/mcp-server-host",
+      "name": "HarnessLab",
+      "description": null,
+      "enabled": true,
+      "version": 1,
+      "collection": "core",
+      "collections": [
+        "core"
+      ],
+      "signature": "0d6605752b393011a2ab40930eab140b0a93f2396c32f937a3517d8dfa50376c",
+      "config": {
+        "title": "Harness Lab",
+        "version": "1.0.0",
+        "sessionManagement": {
+          "maxSessions": 100,
+          "maxLifetimeMinutes": 120,
+          "idleTimeoutMinutes": 30
+        },
+        "permissions": {
+          "type": "AnyOf",
+          "securityLevels": [
+            {
+              "name": "Authenticated",
+              "children": []
+            }
+          ]
+        },
+        "tools": {
+          "ignition/tags": [
+            "realtime",
+            "query",
+            "providers",
+            "diagnostics"
+          ]
+        }
+      },
+      "data": [
+        "config.json"
+      ],
+      "attributes": {
+        "lastModification": {
+          "actor": "idp:default:/usr:harnesslab",
+          "timestamp": "2026-11-17T08:19:25Z"
+        },
+        "uuid": "99a46043-6590-481a-84af-699847847d40",
+        "lastModificationSignature": "e01dfec8bd75a9a0954d67bab09e2014f509fdc86fd8d30f4b8ca02a21454b02",
+        "enabled": true
+      },
+      "metrics": {},
+      "healthchecks": {}
+    }
+  }
+}
