@@ -68,3 +68,60 @@ Catalyst MCP 不接受 Web 会话，需要 `X-Ignition-API-Token`（`keyName:sec
 - 可选：在隔离 2027 Gateway 上补建 `HarnessLabDB` 与 `samples` 表，以消除 2027 预览页表格的 `ERROR`。8.3.9 上该表已经跑通。
 
 2027 在这台 Mac 隔离环境上的 `tools/list` 以及 View 写入/预览/恢复已经完成。8.3.9 在这台 Mac 隔离环境上的已认证 OpenAPI 与 View 写入/预览/恢复也已经完成（Tag 走 import/export 配置路径）。产品界面与薄适配层在 8.3.9 实机 MCP 仍缺模块的情况下，是否可以按已验证的 2027 Catalyst MCP 与两边原生 REST 推进，仍按仓库原有研究边界处理。未实现伪造的 Designer 登录客户端，现在也不做 Companion 模块。
+
+
+## 后续补充：隔离 2027.2.0-beta1、Catalyst tools/list 与 View 写入/预览/恢复（2026-11-18 10:52–11:11）
+
+这是在上文 10:19–10:22 记录之后新增的补充，不改写那一节当时的状态。采集时区仍为 Asia/Singapore。主机仍是 wubindeMac mini。未改动、重启或探测生产性质的 `/usr/local/ignition`（pid 1373，自 2026-11-09 21:49:18 起监听 `*:8088` 与 `*:8060`）。未提交凭据、令牌、17MB 原始 OpenAPI、项目 zip 或第三方模块二进制。
+
+### 已起来的隔离 2027.2.0-beta1
+
+官方镜像 `inductiveautomation/ignition:2027.2.0-beta1`（`linux/arm64`，image/repo digest `sha256:d34130f024296473aab1f0017b4d75870b02a9fbed56d18e0cdfff6804a88e50`，镜像创建于 2026-11-02 21:32:04Z）已在本机以容器 `ignition-harness-2027-beta1`（id 前缀 `b1a7bd2a1392`）运行。该容器于 2026-11-18 10:52:59 启动，健康检查为 healthy。端口仅绑定本机回环：
+
+- `127.0.0.1:18088` → 8088
+- `127.0.0.1:18060` → 8060
+- `127.0.0.1:18443` → 8043
+
+`GET http://127.0.0.1:18088/StatusPing` 返回 200，`{"state":"RUNNING"}`。`GET /system/gwinfo` 返回 200，关键字段：`Version=2027.2.0-beta1`，`PlatformName=ignition-harness-2027-beta1`，`ContextStatus=RUNNING`，`RuntimeVersion=25.0.4.1`，`OS=Linux`，`RequireSsl=false`，`AllowDesignerSSO=false`。脱敏状态记录：[evidence/mac-mini-isolated/2027-beta1-status-2026-11-18.json](evidence/mac-mini-isolated/2027-beta1-status-2026-11-18.json)。
+
+匿名探测（无认证头，也未编造 Designer 登录/续期 API）：
+
+| 路径 | 结果 |
+|---|---|
+| `/StatusPing` | 200 |
+| `/system/gwinfo` | 200 |
+| `/openapi.json` | 403（HTML 错误页） |
+| `/mcp` | 404 Not Found |
+| `/data/perspective` | 404 Not Found |
+| `/data/perspective/client/HarnessMacIsolated` | 200 `text/html`（Perspective 客户端壳） |
+
+`data/modules.json` 共 33 个模块，均为 `com.inductiveautomation.*` 官方模块，**含 Catalyst Core 与 Catalyst Agent**，**未安装 Artek-MCP**。容器日志：10:53:05 `Trial time reset. Time remaining = 7200.`；10:53:11 `Could not read license from HASP key. Driver not found`。该 Beta 不得用于生产，现有许可证与该 Beta 不兼容，未许可模块约有两小时试用。
+
+同一时段，隔离 `ignition-harness-8-3-9` 仍在 `127.0.0.1:28088/28060/28443` 上保持 healthy。官方 8.3.9 镜像仍无 Artek-MCP，字面 `/mcp` 仍为 404，8.3.9 路径的实机 `tools/list` 仍被缺失的授权模块阻塞。
+
+### 本实例 Catalyst MCP `tools/list`
+
+字面路径 `/mcp` 的 404 符合预期，不能把它当成 Catalyst MCP 端点。本实例在其已认证 OpenAPI 中确认存在 `POST /data/api/v1/resources/com.inductiveautomation.catalyst.agent/mcp-server-host` 后，创建了名为 `HarnessLab` 的 `mcp-server-host`。**本实例**随后使用的端点是 `http://127.0.0.1:18088/data/catalyst-agent/mcp-servers/HarnessLab`。不要把该 URL 写成未核验的通用模板，也不要编造其他路径。
+
+对该端点做协议发现（`initialize` + `tools/list`，未执行任何 tool）：`protocolVersion=2025-06-18`，`serverInfo.name=HarnessLab`，4 个工具为 `diagnostics`、`realtime`、`query`、`providers`。认证头名称是 `X-Ignition-API-Token`；令牌值未提交。脱敏记录：[evidence/mac-mini-isolated/mcp-tools-list-2027-beta1-redacted.json](evidence/mac-mini-isolated/mcp-tools-list-2027-beta1-redacted.json)。
+
+### 已认证 REST 与 OpenAPI（本实例）
+
+同一枚 `X-Ignition-API-Token` 在本实例上可以让 MCP `initialize` 返回 200，但对 `GET /openapi.json` 以及 `/data/api/v1/projects*` 返回 403。本实例已验证的 REST 认证是官方 IdP Web 会话 cookie + `X-CSRF-Token`，登录路径为 `/data/app/login` → `/idp/default/authn/...` → `/data/app/session`。这不是 Designer 登录或续期 API；四种身份状态仍分开记录，实现也不能写成“调用 Designer 登录 API”。
+
+已认证 `GET /openapi.json` 得到 OpenAPI 3.1.0，标题 `Ignition HTTP API`，本实例共 696 个路径、809 个操作。原始约 17MB 规格未提交，只提交路径名摘要：[evidence/mac-mini-isolated/openapi-2027-summary.json](evidence/mac-mini-isolated/openapi-2027-summary.json)。本轮 View 写入使用的合同来自该规格：`POST /data/api/v1/projects`、`GET /data/api/v1/projects/export/{name}`、`POST /data/api/v1/projects/import/{name}?overwrite=true`。预览路径为 `/data/perspective/client/{project}`。
+
+### 一次真实 View 写入 + 预览 + 恢复
+
+项目 `HarnessMacIsolated` 由本轮创建。列出项目名时已存在 `HarnessLab`，本轮未改动也未删除它。写入采用“导出原生 zip，合并仅含标签文本的 view 资源，导入覆盖，再导出读回，最后用已确认的基线 zip 恢复”的方法；View 文本分别为 `Lab baseline` 与 `Lab changed`，不依赖标签或数据库提供者。
+
+结果（脱敏记录：[evidence/mac-mini-isolated/view-write-preview-restore-2027-beta1.json](evidence/mac-mini-isolated/view-write-preview-restore-2027-beta1.json)）：
+
+- 创建项目 200；导入基线后导出读回的 view sha256 为 `02a6ba15053581e130d94e4a72f6f2cc4ebff41f34ecd7f09351edf27e87ee0c`，与导入一致，且含 `Lab baseline`。
+- 导入变更后读回 sha256 为 `4f22209aa88c3132138d13d71c9ed4ab1849ca574994a1f531df1cd570fe5da4`，与导入一致，且含 `Lab changed`。
+- 用已确认的基线 zip 恢复后，读回 sha256 回到基线，且含 `Lab baseline`。
+- 浏览器预览 URL：`http://127.0.0.1:18088/data/perspective/client/HarnessMacIsolated`。首次用 `--virtual-time-budget` 抓取的基线/恢复截图停在 Perspective 启动 splash，**不能当作预览证据，也未提交**。
+- 变更后的运行中客户端截图清楚显示 `Lab changed`：[evidence/mac-mini-isolated/screenshots/perspective-changed.png](evidence/mac-mini-isolated/screenshots/perspective-changed.png)。
+- 恢复后用 Chrome DevTools Protocol 等待真实墙钟时间再截图，运行中客户端清楚显示 `Lab baseline`：[evidence/mac-mini-isolated/screenshots/perspective-restored.png](evidence/mac-mini-isolated/screenshots/perspective-restored.png)。
+
+项目 zip 未提交。产品界面在此之前保持阻塞；现在这台 Mac 隔离 2027 Gateway 上已有实机 `tools/list` 以及一次真实 View 写入 + 预览 + 恢复证据。未实现伪造的 Designer 登录客户端，现在也不做 Companion 模块。
