@@ -11,7 +11,7 @@ from .mcp import PROTOCOL, VERIFIED_TOOLS, Catalyst
 from .rest import (
     ROUTE_TABLE, perspective_client_path, project_create_document, request_target,
     tag_configuration_document, tag_export_query, tag_import_query, tag_value_document,
-    validated_project,
+    tag_write_expected_count, validated_project,
 )
 from . import ResearchAdapter
 
@@ -194,8 +194,7 @@ def plan(operation, version, project, args=None):
     if operation == 'tag.writeValues':
         values = _args(args, {'document', 'expected_count'})
         tag_value_document('write', values.get('document'))
-        if type(values.get('expected_count')) is not int or values['expected_count'] < 1:
-            raise AdapterError('tag_value_count_mismatch')
+        tag_write_expected_count(values.get('document'), values.get('expected_count'))
         return _ready(operation, version, project, [{
             'method': 'POST', 'path': request_target('/data/api/v1/tags/write', project),
             'content_type': 'application/json', 'body': values['document'],

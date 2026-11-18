@@ -89,6 +89,8 @@ def fixture_server(mode='ok'):
             if path == '/data/api/v1/tags/write':
                 if mode == 'nested-quality':
                     return self.reply(200, {'results': [{'quality': {'code': 192}}]})
+                if 'write_body' in current:
+                    return self.reply(200, current['write_body'])
                 return self.reply(200, {'results':[{'code':192 if mode!='bad-quality' else 0}]})
             if path in ('/data/api/v1/tags/configuration','/data/api/v1/tags/import'):
                 return self.reply(200, {'successCount':1,'failureCount':0 if mode!='partial-config' else 1,'failures':[]})
@@ -752,6 +754,67 @@ class AdapterTests(unittest.TestCase):
                 adapter.rest.write_values({'tagPaths':['[default]Fixture/T','[default]Fixture/U'],'values':[1,2]},
                                           expected_count=2,allow_gateway_write=True)
             self.assertEqual(len(calls),2)
+
+    def test_write_expected_count_must_match_tag_paths_before_post(self):
+        from research.ignition_adapter.cli import execute, plan
+        two={'tagPaths':['[default]Fixture/T','[default]Fixture/U'],'values':[21.5,22.5]}
+        with self.assertRaises(AdapterError) as planned:
+            plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{'document':two,'expected_count':1})
+        self.assertEqual(planned.exception.reason,'tag_value_count_mismatch')
+        with fixture_server() as (base,calls,current):
+            adapter=self.adapter(base);adapter.rest.discover()
+            current['write_body']={'results':[{'code':192}]}
+            before=len(calls)
+            with self.assertRaises(AdapterError) as error:
+                adapter.rest.write_values(two,expected_count=1,allow_gateway_write=True)
+            self.assertEqual(error.exception.reason,'tag_value_count_mismatch')
+            self.assertEqual(calls[before:],[])
+            with self.assertRaises(AdapterError) as executed:
+                execute('tag.writeValues',base_url=base,version='2027.2.0-beta1',project='FixtureProject',
+                        rest_headers={'Cookie':'web-fixture-secret'},args={'document':two,'expected_count':1},
+                        isolated=True)
+            self.assertEqual(executed.exception.reason,'tag_value_count_mismatch')
+            self.assertEqual(calls[before:],[])
+            current['write_body']={'results':[{'code':192},{'code':192}]}
+            with self.assertRaises(AdapterError) as error:
+                adapter.rest.write_values(two,expected_count=1,allow_gateway_write=True)
+            self.assertEqual(error.exception.reason,'tag_value_count_mismatch')
+            self.assertEqual(calls[before:],[])
+            accepted=[
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':192}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':192.0}]}),
+                (two,2,{'results':[{'code':192},{'code':192,'diagnosticMessage':'Good'}]}),
+            ]
+            for document, count, body in accepted:
+                with self.subTest(accepted=body):
+                    current['write_body']=body
+                    self.assertEqual(adapter.rest.write_values(document,expected_count=count,allow_gateway_write=True),body)
+                    self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/write')
+                    self.assertEqual(calls[-1]['body'],json.dumps(document,separators=(',',':')).encode())
+            rejected=[
+                (two,2,{'results':[{'code':192}]}),
+                (two,2,{'results':[{'code':192},{'code':0,'diagnosticMessage':'not Good'}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[None]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':['bad']}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[192]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':None}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':{'code':192}}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'quality':{'code':192}}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':True}]}),
+            ]
+            for document, count, body in rejected:
+                with self.subTest(rejected=body):
+                    current['write_body']=body
+                    posted=len(calls)
+                    with self.assertRaises(AdapterError) as error:
+                        adapter.rest.write_values(document,expected_count=count,allow_gateway_write=True)
+                    self.assertEqual(error.exception.reason,'tag_write_not_all_good')
+                    self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/write')
+                    self.assertEqual(len(calls),posted+1)
+        self.assertEqual(plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{
+            'document':{'tagPaths':['[default]Fixture/T'],'values':[21.5]},'expected_count':1})['status'],'ready')
 
     def test_post_redirect_is_not_followed_and_proxy_env_is_ignored(self):
         with fixture_server('redirect-post') as (base,calls,_):

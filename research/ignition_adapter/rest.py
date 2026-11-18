@@ -3,8 +3,9 @@
 8.3.9 tag import uses the recorded query string and the caller's original JSON
 file bytes. Beta tag read and write documents are checked against the vendored
 top-level OpenAPI excerpt before they are sent. A Beta read is successful only
-when the 200 body has one Qualified Value object per requested tag. Configuration
-stays caller-supplied.
+when the 200 body has one Qualified Value object per requested tag. A Beta write
+is sent only when expected_count equals the tagPaths length, and succeeds only
+when each result has top-level code 192. Configuration stays caller-supplied.
 """
 import json
 from pathlib import Path
@@ -172,6 +173,33 @@ def tag_read_results(document, result):
     return result
 
 
+def tag_write_expected_count(document, expected_count):
+    """Keep the caller's explicit count, and require it to match tagPaths."""
+    paths = document.get('tagPaths') if isinstance(document, dict) else None
+    if (type(expected_count) is not int or expected_count < 1 or
+            not isinstance(paths, list) or len(paths) != expected_count):
+        raise AdapterError('tag_value_count_mismatch')
+    return document
+
+
+def tag_write_results(document, result):
+    """Accept one Good Quality Code object per requested tag path.
+
+    Official POST /data/api/v1/tags/write results use a top-level numeric code.
+    192.0 counts as Good. A boolean, a nested quality.code, or a missing code
+    does not. diagnosticMessage is optional.
+    """
+    rows = result.get('results') if isinstance(result, dict) else None
+    paths = document.get('tagPaths') if isinstance(document, dict) else None
+    if not isinstance(rows, list) or not isinstance(paths, list) or len(rows) != len(paths):
+        raise AdapterError('tag_write_not_all_good')
+    for row in rows:
+        code = row.get('code') if isinstance(row, dict) else None
+        if not _json_number(code) or code != 192:
+            raise AdapterError('tag_write_not_all_good')
+    return result
+
+
 def tag_configuration_document(document):
     """Type-check only official configuration properties that the caller included.
 
@@ -294,11 +322,6 @@ class Rest:
         self._version_required(BETA)
         self._write_allowed(allow_gateway_write)
         tag_value_document('write', document)
-        if type(expected_count) is not int or expected_count < 1:
-            raise AdapterError('tag_value_count_mismatch')
+        tag_write_expected_count(document, expected_count)
         result = self._call('POST', '/data/api/v1/tags/write', body=document)
-        rows = result.get('results') if isinstance(result, dict) else None
-        if (not isinstance(rows, list) or len(rows) != expected_count or
-                not all(isinstance(row, dict) and row.get('code') == 192 for row in rows)):
-            raise AdapterError('tag_write_not_all_good')
-        return result
+        return tag_write_results(document, result)
