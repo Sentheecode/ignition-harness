@@ -1,0 +1,79 @@
+{
+  "provenance": {
+    "commit": "e0e583bcc18b989bd2ba1edb6f771f00eb5df570",
+    "path": "docs/evidence/mac-mini-isolated/2027.2.0-beta1-mcp-tools.redacted.json",
+    "sha256": "067a2b1ec1d9e0e13206a7cc5ac1006e61cbcc0203f609bdb29e82010d579cac",
+    "note": "Derived tool contracts only; endpoint/host/session identifiers omitted"
+  },
+  "input_schemas": {
+    "diagnostics": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "The tag path to get diagnostic info from. Paths follow a [Tag Provider]tag/path format, tag provider is required."
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "realtime": {
+      "type": "object",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "One or more tag paths to read. Paths follow the format [providerName]path/to/tag."
+        }
+      },
+      "required": [
+        "paths"
+      ]
+    },
+    "query": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Filters for tags with a matching name. Paths follow a [Tag Provider]tag/path format. Supports the * character as a wildcard, tag provider is required."
+        },
+        "filters": {
+          "type": "object",
+          "properties": {
+            "quality": {
+              "type": "string",
+              "enum": [
+                "Good",
+                "Uncertain",
+                "Bad",
+                "Error"
+              ],
+              "description": "Filters for tags with a matching quality"
+            },
+            "maxResults": {
+              "type": "integer",
+              "description": "Limit the number of returned matching results.  Maximum supported response size is 500 elements."
+            }
+          },
+          "required": [],
+          "description": "The filters that can be applied to the queried tag paths"
+        },
+        "continuationPoint": {
+          "type": "string",
+          "description": "The continuation point from a previous query.  If the number of results exceed the maxResults limit then a continuationPoint is returned so that subsequent calls can return the remaining elements."
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "providers": {
+      "type": "object",
+      "properties": {},
+      "required": []
+    }
+  }
+}
