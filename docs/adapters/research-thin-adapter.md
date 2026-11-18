@@ -111,7 +111,7 @@ python -m research.ignition_adapter execute --isolated-test-gateway \
   --args-file /path/outside/repo/export-args.json
 ```
 
-`discover` 只看本地版本策略和可选的 OpenAPI 文件，不因为版本字符串就宣布路由可用。`plan` 不打开 socket。`execute` 在标志缺失时直接拒绝。标准输出会把 header 值和 session 值替换成 `[redacted]`，并且不回显整份 OpenAPI。
+`discover` 只看本地版本策略和可选的 OpenAPI 文件，不因为版本字符串就宣布路由可用。它按操作报告文档策略：Beta 的 `tag.readValues` 和 `tag.writeValues` 对照 `beta1-tag-openapi-fields.json`，Beta 的 `tag.configure` 仍是调用方文档，8.3.9 的运行值读写是 `blocked_by_version`。`plan` 不打开 socket。`execute` 在标志缺失时直接拒绝。标准输出会把 header 值和 session 值替换成 `[redacted]`，并且不回显整份 OpenAPI。
 
 ### Catalyst 与状态
 

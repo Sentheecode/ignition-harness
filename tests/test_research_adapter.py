@@ -781,6 +781,43 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(hidden['operations']['project.export'],'absent')
         self.assertEqual(hidden['operations']['project.importZip'],'absent')
 
+    def test_discover_tag_document_policy_matches_plan(self):
+        from research.ignition_adapter.cli import discover, plan
+        beta=discover('2027.2.0-beta1')
+        self.assertNotEqual(beta.get('beta_tag_document'),'caller_supplied_json')
+        policy=beta['tag_document_policy']
+        self.assertEqual(policy['tag.readValues'],'excerpt:beta1-tag-openapi-fields.json')
+        self.assertEqual(policy['tag.writeValues'],'excerpt:beta1-tag-openapi-fields.json')
+        self.assertNotEqual(policy['tag.readValues'],'caller_supplied_json')
+        self.assertNotEqual(policy['tag.writeValues'],'caller_supplied_json')
+        self.assertEqual(policy['tag.configure'],'caller_supplied_json')
+        stable=discover('8.3.9')
+        self.assertEqual(stable['tag_document_policy']['tag.readValues'],'blocked_by_version')
+        self.assertEqual(stable['tag_document_policy']['tag.writeValues'],'blocked_by_version')
+        self.assertNotEqual(stable['tag_document_policy']['tag.readValues'],'caller_supplied_json')
+        read_doc={'tags':['[default]Fixture/T']}
+        ready=plan('tag.readValues','2027.2.0-beta1','FixtureProject',{'document':read_doc})
+        self.assertEqual(ready['status'],'ready')
+        self.assertEqual(ready['calls'][0]['method'],'GET')
+        self.assertEqual(ready['calls'][0]['body'],read_doc)
+        write_doc={'tagPaths':['[default]Fixture/T'],'values':[21.5]}
+        ready=plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{'document':write_doc,'expected_count':1})
+        self.assertEqual(ready['status'],'ready')
+        self.assertEqual(ready['calls'][0]['method'],'POST')
+        self.assertEqual(ready['calls'][0]['body'],write_doc)
+        with self.assertRaises(AdapterError) as error:
+            plan('tag.readValues','2027.2.0-beta1','FixtureProject',{'document':{'paths':['[default]Fixture/T']}})
+        self.assertEqual(error.exception.reason,'tag_document_not_in_excerpt')
+        with self.assertRaises(AdapterError) as error:
+            plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{
+                'document':[{'path':'[default]Fixture/T','value':21.5}],'expected_count':1})
+        self.assertEqual(error.exception.reason,'tag_document_not_in_excerpt')
+        configured={'name':'T','valueSource':'memory'}
+        self.assertEqual(plan('tag.configure','2027.2.0-beta1','FixtureProject',{'document':configured})['calls'][0]['body'],configured)
+        blocked=plan('tag.writeValues','8.3.9','FixtureProject',{'document':write_doc,'expected_count':1})
+        self.assertEqual(blocked['status'],'blocked')
+        self.assertEqual(blocked['calls'],[])
+
     def _ready_catalog(self, mode='ok'):
         context=fixture_server(mode)
         base,calls,_=context.__enter__()

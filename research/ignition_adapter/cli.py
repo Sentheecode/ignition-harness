@@ -19,6 +19,7 @@ OPERATIONS = (
     'tag.importConfiguration', 'tag.exportConfiguration', 'tag.configure',
     'tag.readValues', 'tag.writeValues', 'mcp.listTools', 'mcp.call',
 )
+_TAG_EXCERPT = 'excerpt:beta1-tag-openapi-fields.json'
 _INSTALL_ROOT = Path('/usr/local/ignition')
 
 
@@ -82,7 +83,22 @@ def discover(version, document=None):
             'designer_login', 'artek_mcp', 'realtime_subscription',
             'database_inspector', 'atomic_project_write',
         ],
-        'beta_tag_document': 'caller_supplied_json',
+        'tag_document_policy': _tag_document_policy(version),
+    }
+
+
+def _tag_document_policy(version):
+    """Match plan()/execute(): excerpt checks apply only to Beta read and write."""
+    if version == BETA:
+        return {
+            'tag.readValues': _TAG_EXCERPT,
+            'tag.writeValues': _TAG_EXCERPT,
+            'tag.configure': 'caller_supplied_json',
+        }
+    return {
+        'tag.readValues': 'blocked_by_version',
+        'tag.writeValues': 'blocked_by_version',
+        'tag.configure': 'blocked_by_version',
     }
 
 
