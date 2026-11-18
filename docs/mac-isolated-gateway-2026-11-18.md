@@ -14,7 +14,20 @@
 
 `GET http://127.0.0.1:28088/StatusPing` 返回 200，`{"state":"RUNNING"}`。`GET /system/gwinfo` 返回 200，关键字段：`Version=8.3.9`，`PlatformName=ignition-harness-8-3-9`，`ContextStatus=RUNNING`，`RuntimeVersion=17.0.19`，`OS=Linux`，`RequireSsl=false`，`AllowDesignerSSO=false`。容器内 `commissioning.json` 为已 commissioning。首页标题为 `ignition-harness-8-3-9`。数据卷为 `ignition-harness-8-3-9-data`。原始脱敏记录：[evidence/mac-mini-isolated/8.3.9-status-2026-11-18.json](evidence/mac-mini-isolated/8.3.9-status-2026-11-18.json)。
 
-匿名探测（无认证头，也未编造 Designer 登录/续期 API）：`/StatusPing` 200，`/system/gwinfo` 200，`/openapi.json` 403 Forbidden，`/mcp` 404 Not Found。`data/modules.json` 共 29 个官方模块，**未安装 Artek-MCP**，因此这台 8.3.9 上没有可探测的 `/mcp`，无法采集实机 `tools/list`。容器日志 10:12:28 `Trial time reset. Time remaining = 7200.`，10:12:33 `Could not read license from HASP key. Driver not found`。未许可试用约到 2026-11-18 12:12（Asia/Singapore）。截至本文件 2027 补充写入时，该隔离 8.3.9 容器仍在健康运行；本轮尚未在这台 8.3.9 上做已认证 OpenAPI 或 View 写入/预览/恢复。
+匿名探测（无认证头，也未编造 Designer 登录/续期 API）：`/StatusPing` 200，`/system/gwinfo` 200，`/openapi.json` 403 Forbidden，`/mcp` 404 Not Found。`data/modules.json` 共 29 个官方模块，**未安装 Artek-MCP**，因此这台 8.3.9 上没有可探测的 `/mcp`，无法采集实机 `tools/list`。容器日志 10:12:28 `Trial time reset. Time remaining = 7200.`，10:12:33 `Could not read license from HASP key. Driver not found`。未许可试用约到 2026-11-18 12:12（Asia/Singapore）。该隔离 8.3.9 容器在后续已认证验证期间仍保持健康运行。
+
+## 8.3.9 认证、OpenAPI 与 View 写入/预览/恢复
+
+登录同样走官方 IdP 与 Web 会话 + CSRF，没有编造 Designer 登录或续期 API。已认证 OpenAPI 为 580 条路径、679 个操作，高于先前 Linux 解包环境的 389 条路径。摘要：[evidence/mac-mini-isolated/8.3.9-openapi.summary.json](evidence/mac-mini-isolated/8.3.9-openapi.summary.json)。认证说明（无密钥）：[evidence/mac-mini-isolated/8.3.9-auth-and-openapi.redacted.json](evidence/mac-mini-isolated/8.3.9-auth-and-openapi.redacted.json)。
+
+8.3.9 的 Tag API 不能照搬 2027 Beta：本轮使用已验证的配置导入/导出路径，而不是 `/tags/configuration`、`/tags/read`、`/tags/write`。导入 Memory Tag 的 value 不能包装成已验证的通用运行值写入 API。步骤见 [evidence/mac-mini-isolated/8.3.9-view-write-preview-restore.json](evidence/mac-mini-isolated/8.3.9-view-write-preview-restore.json)。摘要：
+
+1. `POST /data/api/v1/projects` 创建项目 `HarnessLab`（200）。
+2. `POST /data/api/v1/projects/import/HarnessLab?overwrite=true` 导入夹具（保留原生 `project.json` / `global-props`，合并 `research/fixtures/project-additions`）。Gateway 日志 2026-11-18 11:10:04（Asia/Singapore）出现 `HARNESS_LAB_STARTUP_V1_VERIFIED collection=HarnessLab`。
+3. `POST /data/api/v1/tags/import?provider=default&type=json&collisionPolicy=Abort`，Content-Type `application/octet-stream`，创建 Folder + Float8 Memory Tag，`successCount` 2。`GET /data/api/v1/tags/export?provider=default&type=json&path=HarnessLab` 读回 `value` 与 `defaultValue` 均为 `42.5`。
+4. 在数据目录创建独立 SQLite 文件（`jdbc:sqlite:${data}/harnesslab.db`），表 `samples` 含三行合成数据：Pump A 42.5、Pump B 72.5、Pump C 88.5。`POST /data/api/v1/resources/ignition/database-connection` 的 OpenAPI 要求 JSON 数组，每项需 `name` 以及 `config.driver`、`config.translator`、`config.connectURL`。创建 `HarnessLabDB` 返回 200，`success=true`（11:10:58）。
+5. 用 Chrome DevTools Protocol 截图。可见文字包括：`Ignition Harness — Database Preview`、`42.5`、`Script V2 OK: 42.5`，以及表格中的 Pump A/B/C。截图：[evidence/mac-mini-isolated/screenshots/8.3.9-perspective-42.5.png](evidence/mac-mini-isolated/screenshots/8.3.9-perspective-42.5.png)。页面 innerText 里同时出现过 `No Connection to Gateway` 与 `Connected: ignition-harness-8-3-9`；截图本身清楚显示了视图、Tag、脚本标签和数据表。
+6. `POST /data/api/v1/tags/import?...&collisionPolicy=MergeOverwrite&path=HarnessLab` 将 Tag 写回 `21.5`（`successCount` 1），export 读回 `21.5`。再次截图可见 `21.5` 与 `Script V2 OK: 21.5`，表格三行仍在：[evidence/mac-mini-isolated/screenshots/8.3.9-perspective-restored-21.5.png](evidence/mac-mini-isolated/screenshots/8.3.9-perspective-restored-21.5.png)。
 
 ## 已起来的隔离 2027.2.0-beta1
 
@@ -52,7 +65,6 @@ Catalyst MCP 不接受 Web 会话，需要 `X-Ignition-API-Token`（`keyName:sec
 ## 尚未在这台 Mac 隔离环境完成的验收
 
 - 8.3.9 实机 `tools/list`：仍被缺失的 Artek-MCP 阻塞（`/mcp` 404 为直接证据）。不要把模块二进制提交进仓库，也不要装到生产 Gateway。
-- 8.3.9 在这台 Mac 隔离 Gateway 上的已认证 OpenAPI 与一次真实 View 写入 + 预览 + 恢复：尚未做。Linux 解包环境已有对应证据，见 [runtime-validation-8.3.9.md](runtime-validation-8.3.9.md)；不能把那次结果记成这台 Mac 的实机结果。8.3.9 的 Tag API 与 2027 Beta 不同（import/export，而不是 configuration/read/write）。
-- 可选：在隔离 2027 Gateway 上创建 `HarnessLabDB` 与 `samples` 表，以消除预览页表格的 `ERROR`。
+- 可选：在隔离 2027 Gateway 上补建 `HarnessLabDB` 与 `samples` 表，以消除 2027 预览页表格的 `ERROR`。8.3.9 上该表已经跑通。
 
-2027 在这台 Mac 隔离环境上的 `tools/list` 以及 View 写入/预览/恢复已经完成。产品界面与薄适配层在 8.3.9 实机 MCP 仍缺模块的情况下，是否可以只按 2027 基线推进，仍按仓库原有研究边界处理。未实现伪造的 Designer 登录客户端，现在也不做 Companion 模块。
+2027 在这台 Mac 隔离环境上的 `tools/list` 以及 View 写入/预览/恢复已经完成。8.3.9 在这台 Mac 隔离环境上的已认证 OpenAPI 与 View 写入/预览/恢复也已经完成（Tag 走 import/export 配置路径）。产品界面与薄适配层在 8.3.9 实机 MCP 仍缺模块的情况下，是否可以按已验证的 2027 Catalyst MCP 与两边原生 REST 推进，仍按仓库原有研究边界处理。未实现伪造的 Designer 登录客户端，现在也不做 Companion 模块。
