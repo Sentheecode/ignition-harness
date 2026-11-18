@@ -8,7 +8,7 @@ the request field names.
 import json
 import re
 import urllib.parse
-from .archive import checked_archive
+from .archive import ProjectConflict, changed_project_paths, checked_archive
 from .core import MAX_BYTES, AdapterError, BETA, credentials, decode_json, encode_json
 
 
@@ -146,10 +146,13 @@ class Rest:
         return checked_archive(self._call(
             'GET', '/data/api/v1/projects/export/{name}', binary=True, accept='application/zip, */*'))
 
-    def import_project(self, archive, *, allow_overwrite=False, disposable_project=False):
+    def import_project(self, archive, *, expected_current, allow_overwrite=False, disposable_project=False):
         if allow_overwrite is not True or disposable_project is not True:
             raise AdapterError('explicit_disposable_project_overwrite_required')
         checked_archive(archive)
+        changes = changed_project_paths(expected_current, self.export_project())
+        if changes:
+            raise ProjectConflict(changes)
         result = self._call('POST', '/data/api/v1/projects/import/{name}', query=[('overwrite', 'true')],
                             data=archive, content_type='application/zip')
         if not isinstance(result, dict) or result.get('success') is not True:

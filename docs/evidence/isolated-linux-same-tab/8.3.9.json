@@ -1,0 +1,24 @@
+{
+  "version": "8.3.9",
+  "platform": "Linux isolated copy",
+  "baseline_view_sha256": "3d84a757f82db663eb905fd9faf4e6a7c1ef47d4278e90a3826cb308b12df814",
+  "navigation_count_at_baseline": 1,
+  "phases": {
+    "change": {
+      "preflight_start_to_visible_ms": 186,
+      "preflight_start_to_import_return_ms": 42,
+      "same_document": true,
+      "main_frame_navigations_total": 1,
+      "readback_view_sha256": "0dca8584da364693f7611a293b597037ff23d770d61b4eed1dc3d12293464bb5",
+      "all_entries_match_requested": true
+    },
+    "restore": {
+      "preflight_start_to_visible_ms": 139,
+      "preflight_start_to_import_return_ms": 50,
+      "same_document": true,
+      "main_frame_navigations_total": 1,
+      "readback_view_sha256": "3d84a757f82db663eb905fd9faf4e6a7c1ef47d4278e90a3826cb308b12df814",
+      "all_entries_match_requested": true
+    }
+  }
+}

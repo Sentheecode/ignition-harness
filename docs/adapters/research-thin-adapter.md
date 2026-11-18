@@ -66,16 +66,26 @@ REST 与 MCP 的 header 字典分别复制、分别使用，没有默认的认�
 `patch_existing_view(baseline_zip, existing_view_json_path, view_dict)` 只在内存中替换**已经存在**的 `view.json`，保留其他文件内容、原生 global-props、资源描述和 ZIP 条目元数据；不创建猜测的资源描述，不解压到磁盘，不验证第三方组件语义。
 
 ```python
-from research.ignition_adapter import patch_existing_view
+from research.ignition_adapter import ProjectConflict, changed_project_paths, patch_existing_view
 
 changed_zip = patch_existing_view(baseline_zip, verified_existing_path, edited_view)
-a.rest.import_project(changed_zip, allow_overwrite=True, disposable_project=True)
+a.rest.import_project(changed_zip, expected_current=baseline_zip, allow_overwrite=True, disposable_project=True)
 changed_readback = a.rest.export_project()
+changes = changed_project_paths(changed_zip, changed_readback)
+if changes:
+    raise ProjectConflict(changes)  # 意外变化需人工检查，停止恢复
 # 调用方在真实 Perspective 中验证实际生效内容；本库不制造浏览器证据。
 # 确认服务器仍是本实验状态后，显式恢复；不存在自动回滚或原子 compare-and-swap。
-a.rest.import_project(baseline_zip, allow_overwrite=True, disposable_project=True)
+a.rest.import_project(baseline_zip, expected_current=changed_readback, allow_overwrite=True, disposable_project=True)
 restored_readback = a.rest.export_project()
+changes = changed_project_paths(baseline_zip, restored_readback)
+if changes:
+    raise ProjectConflict(changes)
 ```
+
+每次导入前，适配层会重新导出项目，按路径和解压后的内容比较所有条目。发现新增、删除或修改时，调用方可以从 `ProjectConflict.paths` 获取涉及的路径，此次调用只读。此检查与随后的导入是两个独立的 HTTP 请求。
+
+通过 CLI 执行 `project.importZip` 时，在参数 JSON 中将 `zip_path` 指向待导入文件，`expected_path` 指向保存的预期归档，并显式设置 `allow_overwrite` 和 `disposable_project` 为 true。冲突时 CLI 以退出码 2 返回 `project_contents_changed`。
 
 上述是有副作用的方法调用示意，不是在本轮执行的操作。只对调用方确认自有、可丢弃且独占编辑的隔离项目使用。不要在 `finally` 中无条件覆盖未知并发改动；超时先读回判断，不自动重试。归档覆盖可能影响整个项目，普通 hash/readback 不能消除并发窗口。恢复成功还需要调用方验证内容与真实预览，不能只根据 import 200 或字节长度判断。
 
