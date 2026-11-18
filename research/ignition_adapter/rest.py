@@ -2,7 +2,9 @@
 
 8.3.9 tag import uses the recorded query string and the caller's original JSON
 file bytes. Beta tag read and write documents are checked against the vendored
-top-level OpenAPI excerpt before they are sent. Configuration stays caller-supplied.
+top-level OpenAPI excerpt before they are sent. A Beta read is successful only
+when the 200 body has one Qualified Value object per requested tag. Configuration
+stays caller-supplied.
 """
 import json
 from pathlib import Path
@@ -137,6 +139,39 @@ def tag_value_document(kind, document):
     return document
 
 
+def _json_number(value):
+    """JSON number only. Booleans are integers in Python and are not numbers."""
+    return type(value) in (int, float)
+
+
+def tag_read_results(document, result):
+    """Accept one object per requested tag. Do not require Good quality or rewrite rows.
+
+    Official GET /data/api/v1/tags/read 200 results are Qualified Value objects,
+    one per requested path and in that order. value, quality, and timestamp are
+    optional. A non-Good quality in a 200 body stays a successful read.
+    """
+    results = result.get('results') if isinstance(result, dict) else None
+    tags = document.get('tags') if isinstance(document, dict) else None
+    if (not isinstance(results, list) or not results or not isinstance(tags, list) or
+            len(results) != len(tags)):
+        raise AdapterError('tag_read_failed')
+    for row in results:
+        if not isinstance(row, dict):
+            raise AdapterError('tag_read_failed')
+        if 'quality' in row:
+            quality = row['quality']
+            if not isinstance(quality, dict):
+                raise AdapterError('tag_read_failed')
+            if 'code' in quality and not _json_number(quality['code']):
+                raise AdapterError('tag_read_failed')
+            if 'diagnosticMessage' in quality and not isinstance(quality['diagnosticMessage'], str):
+                raise AdapterError('tag_read_failed')
+        if 'timestamp' in row and not isinstance(row['timestamp'], str):
+            raise AdapterError('tag_read_failed')
+    return result
+
+
 def tag_configuration_document(document):
     """Type-check only official configuration properties that the caller included.
 
@@ -253,9 +288,7 @@ class Rest:
         self._version_required(BETA)
         tag_value_document('read', document)
         result = self._call('GET', '/data/api/v1/tags/read', body=document)
-        if not isinstance(result, dict) or not isinstance(result.get('results'), list) or not result['results']:
-            raise AdapterError('tag_read_failed')
-        return result
+        return tag_read_results(document, result)
 
     def write_values(self, document, *, expected_count, allow_gateway_write=False):
         self._version_required(BETA)

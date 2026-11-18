@@ -85,7 +85,7 @@ def fixture_server(mode='ok'):
                 current['zip']=raw
                 return self.reply(200, {'success':True,'changes':[{'name':'FixtureProject'}]})
             if path == '/data/api/v1/tags/read':
-                return self.reply(200, {'results':[{'value':42.5,'quality':{'code':192}}]})
+                return self.reply(200, current.get('read_body', {'results':[{'value':42.5,'quality':{'code':192}}]}))
             if path == '/data/api/v1/tags/write':
                 if mode == 'nested-quality':
                     return self.reply(200, {'results': [{'quality': {'code': 192}}]})
@@ -403,6 +403,56 @@ class AdapterTests(unittest.TestCase):
             self.assertEqual(calls[-1]['body'],json.dumps(write_body,separators=(',',':')).encode())
             self.assertNotIn(b'paths',calls[-2]['body'])
             self.assertNotIn(b'collisionPolicy',calls[-1]['body'])
+
+    def test_beta_read_results_must_be_one_object_per_requested_tag(self):
+        with fixture_server() as (base,calls,current):
+            adapter=self.adapter(base);adapter.rest.discover()
+            accepted=[
+                ({'tags':['[default]Fixture/T']},
+                 {'results':[{'value':42.5,'quality':{'code':192}}]}),
+                ({'tags':['[default]Fixture/T','[default]Fixture/U']},
+                 {'results':[{'value':1,'quality':{'code':192}},{'value':2,'quality':{'code':192}}]}),
+                ({'tags':['[default]Fixture/T']},
+                 {'results':[{'quality':{'code':0,'diagnosticMessage':'not Good'}}]}),
+                ({'tags':['[default]Fixture/T']},
+                 {'results':[{'quality':{'code':192.0},'timestamp':'2026-11-18T10:50:00Z'}]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[{}]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[{'code':192}]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[{'value':None}]}),
+            ]
+            for document, body in accepted:
+                with self.subTest(accepted=body):
+                    current['read_body']=body
+                    self.assertEqual(adapter.rest.read_values(document), body)
+            rejected=[
+                ({'tags':['[default]Fixture/T','[default]Fixture/U']},
+                 {'results':[{'value':1,'quality':{'code':192}}]}),
+                ({'tags':['[default]Fixture/T']},
+                 {'results':[{'value':1,'quality':{'code':192}},{'value':2,'quality':{'code':192}}]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[None]}),
+                ({'tags':['[default]Fixture/T']}, {'results':['bad']}),
+                ({'tags':['[default]Fixture/T']}, {'results':[192]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[]}),
+                ({'tags':['[default]Fixture/T']}, {}),
+                ({'tags':['[default]Fixture/T']}, {'results':None}),
+                ({'tags':['[default]Fixture/T']}, {'results':{'value':1}}),
+                ({'tags':['[default]Fixture/T']}, {'results':[{'quality':192}]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[{'quality':{'code':'192'}}]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[{'quality':{'code':True}}]}),
+                ({'tags':['[default]Fixture/T']},
+                 {'results':[{'quality':{'code':0,'diagnosticMessage':0}}]}),
+                ({'tags':['[default]Fixture/T']}, {'results':[{'timestamp':1794929264393}]}),
+            ]
+            for document, body in rejected:
+                with self.subTest(rejected=body):
+                    current['read_body']=body
+                    before=len(calls)
+                    with self.assertRaises(AdapterError) as error:
+                        adapter.rest.read_values(document)
+                    self.assertEqual(error.exception.reason,'tag_read_failed')
+                    self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/read')
+                    self.assertEqual(calls[-1]['body'],json.dumps(document,separators=(',',':')).encode())
+                    self.assertEqual(len(calls),before+1)
 
     def test_beta_tag_documents_outside_excerpt_are_not_sent_or_rewritten(self):
         from research.ignition_adapter.cli import plan
