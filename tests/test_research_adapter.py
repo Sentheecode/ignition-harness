@@ -390,8 +390,8 @@ class AdapterTests(unittest.TestCase):
     def test_beta_read_values_uses_get_json_body_and_write_is_distinct(self):
         with fixture_server() as (base,calls,_):
             a=self.adapter(base);a.rest.discover()
-            read_body={'paths':['[default]Fixture/T']}
-            write_body=[{'path':'[default]Fixture/T','value':21.5}]
+            read_body={'tags':['[default]Fixture/T']}
+            write_body={'tagPaths':['[default]Fixture/T'],'values':[21.5]}
             self.assertEqual(a.rest.read_values(read_body)['results'][0]['value'],42.5)
             a.rest.write_values(write_body,expected_count=1,allow_gateway_write=True)
             self.assertEqual(calls[-2]['method'],'GET')
@@ -401,15 +401,47 @@ class AdapterTests(unittest.TestCase):
             self.assertEqual(calls[-1]['method'],'POST')
             self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/write')
             self.assertEqual(calls[-1]['body'],json.dumps(write_body,separators=(',',':')).encode())
-            self.assertNotIn(b'tagPaths',calls[-1]['body'])
+            self.assertNotIn(b'paths',calls[-2]['body'])
             self.assertNotIn(b'collisionPolicy',calls[-1]['body'])
+
+    def test_beta_tag_documents_outside_excerpt_are_not_sent_or_rewritten(self):
+        from research.ignition_adapter.cli import plan
+        with fixture_server() as (base,calls,_):
+            adapter=self.adapter(base);adapter.rest.discover()
+            rejected=[
+                ('read', {'paths':['[default]Fixture/T']}, {}),
+                ('read', {'tags':['[default]Fixture/T'],'paths':['x']}, {}),
+                ('write', [{'path':'[default]Fixture/T','value':21.5}], {'expected_count':1,'allow_gateway_write':True}),
+                ('write', {'tagPaths':['[default]Fixture/T','[default]Fixture/U'],'values':[21.5]},
+                 {'expected_count':1,'allow_gateway_write':True}),
+            ]
+            for kind, document, kwargs in rejected:
+                with self.subTest(document=document):
+                    with self.assertRaises(AdapterError) as error:
+                        if kind=='read': adapter.rest.read_values(document)
+                        else: adapter.rest.write_values(document, **kwargs)
+                    if isinstance(document, dict) and isinstance(document.get('tagPaths'), list) and isinstance(document.get('values'), list) and len(document['tagPaths'])!=len(document['values']):
+                        self.assertEqual(error.exception.reason,'tag_paths_values_length_mismatch')
+                    else:
+                        self.assertEqual(error.exception.reason,'tag_document_not_in_excerpt')
+            self.assertEqual([call['path'] for call in calls],['/openapi.json'])
+        with self.assertRaises(AdapterError) as error:
+            plan('tag.readValues','2027.2.0-beta1','FixtureProject',{'document':{'paths':['[default]Fixture/T']}})
+        self.assertEqual(error.exception.reason,'tag_document_not_in_excerpt')
+        with self.assertRaises(AdapterError) as error:
+            plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{
+                'document':{'tagPaths':['[default]Fixture/T'],'values':[1,2]},'expected_count':1})
+        self.assertEqual(error.exception.reason,'tag_paths_values_length_mismatch')
+        ready=plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{
+            'document':{'tagPaths':['[default]Fixture/T'],'values':[21.5]},'expected_count':1})
+        self.assertEqual(ready['calls'][0]['body'],{'tagPaths':['[default]Fixture/T'],'values':[21.5]})
 
     def test_config_and_quality_failures_are_not_success_and_writes_are_not_retried(self):
         for mode in ['bad-quality','partial-config']:
             with self.subTest(mode=mode),fixture_server(mode) as (base,calls,_):
                 a=self.adapter(base);a.rest.discover()
                 with self.assertRaises(AdapterError):
-                    if mode=='bad-quality':a.rest.write_values({'value':1},expected_count=1,allow_gateway_write=True)
+                    if mode=='bad-quality':a.rest.write_values({'tagPaths':['[default]Fixture/T'],'values':[1]},expected_count=1,allow_gateway_write=True)
                     else:a.rest.configure_tags({'name':'T'},allow_gateway_write=True)
                 self.assertEqual(len(calls),2)
 
@@ -622,12 +654,12 @@ class AdapterTests(unittest.TestCase):
         with fixture_server('nested-quality') as (base,calls,_):
             adapter=self.adapter(base);adapter.rest.discover()
             with self.assertRaises(AdapterError):
-                adapter.rest.write_values([{'path':'[default]Fixture/T','value':1}],expected_count=1,allow_gateway_write=True)
+                adapter.rest.write_values({'tagPaths':['[default]Fixture/T'],'values':[1]},expected_count=1,allow_gateway_write=True)
             self.assertEqual(len(calls),2)
         with fixture_server() as (base,calls,_):
             adapter=self.adapter(base);adapter.rest.discover()
             with self.assertRaises(AdapterError):
-                adapter.rest.write_values([{'path':'[default]Fixture/T','value':1},{'path':'[default]Fixture/U','value':2}],
+                adapter.rest.write_values({'tagPaths':['[default]Fixture/T','[default]Fixture/U'],'values':[1,2]},
                                           expected_count=2,allow_gateway_write=True)
             self.assertEqual(len(calls),2)
 
@@ -847,6 +879,14 @@ class AdapterTests(unittest.TestCase):
                 self.assertNotIn('private-server-response',str(error.exception))
                 self.assertNotIn('evil.json',str(error.exception))
         self.assertTrue(checked_archive(archive()).startswith(b'PK'))
+
+    def test_vendored_beta_tag_excerpt_is_byte_identical(self):
+        import hashlib
+        raw=(Path(__file__).parents[1]/'research/ignition_adapter/beta1-tag-openapi-fields.json').read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),
+                         'd7461e7bc941eebac42f75c2992968dd03b26fce4c505aad4e72612af696e4e0')
+        self.assertEqual(json.loads(raw)['read']['properties'],['tags'])
+        self.assertEqual(json.loads(raw)['write']['required'],['tagPaths','values'])
 
 
 if __name__=='__main__':unittest.main()

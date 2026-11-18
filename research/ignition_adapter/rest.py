@@ -1,15 +1,17 @@
 """REST operations evidenced by PR #3 and checked against the target OpenAPI.
 
 8.3.9 tag import uses the recorded query string and the caller's original JSON
-file bytes. Beta tag read, write, and configuration send the caller's JSON
-document unchanged: the archived evidence has the route and the response, not
-the request field names.
+file bytes. Beta tag read and write documents are checked against the vendored
+top-level OpenAPI excerpt before they are sent. Configuration stays caller-supplied.
 """
 import json
+from pathlib import Path
 import re
 import urllib.parse
 from .archive import ProjectConflict, changed_project_paths, checked_archive
 from .core import MAX_BYTES, AdapterError, BETA, credentials, decode_json, encode_json
+
+_TAG_FIELDS = json.loads(Path(__file__).with_name('beta1-tag-openapi-fields.json').read_text(encoding='utf-8'))
 
 
 def validated_project(project):
@@ -94,6 +96,27 @@ def tag_import_bytes(document):
 
 def project_create_document(project):
     return {'name': validated_project(project)}
+
+
+def tag_value_document(kind, document):
+    """Check a Beta read or write document against the top-level excerpt only.
+
+    The excerpt names object fields. It does not describe array items, and this
+    function does not rename or rebuild the caller's document.
+    """
+    spec = _TAG_FIELDS.get(kind)
+    allowed = spec.get('properties') if isinstance(spec, dict) else None
+    required = spec.get('required') if isinstance(spec, dict) else None
+    if (not isinstance(spec, dict) or spec.get('type') != 'object' or
+            not isinstance(allowed, list) or not isinstance(required, list) or
+            not isinstance(document, dict) or not set(required) <= set(document) or
+            not set(document) <= set(allowed)):
+        raise AdapterError('tag_document_not_in_excerpt')
+    if kind == 'write':
+        paths, values = document.get('tagPaths'), document.get('values')
+        if isinstance(paths, list) and isinstance(values, list) and len(paths) != len(values):
+            raise AdapterError('tag_paths_values_length_mismatch')
+    return document
 
 
 def _paths(paths):
@@ -194,6 +217,7 @@ class Rest:
 
     def read_values(self, document):
         self._version_required(BETA)
+        tag_value_document('read', document)
         result = self._call('GET', '/data/api/v1/tags/read', body=document)
         if not isinstance(result, dict) or not isinstance(result.get('results'), list) or not result['results']:
             raise AdapterError('tag_read_failed')
@@ -202,6 +226,7 @@ class Rest:
     def write_values(self, document, *, expected_count, allow_gateway_write=False):
         self._version_required(BETA)
         self._write_allowed(allow_gateway_write)
+        tag_value_document('write', document)
         if type(expected_count) is not int or expected_count < 1:
             raise AdapterError('tag_value_count_mismatch')
         result = self._call('POST', '/data/api/v1/tags/write', body=document)

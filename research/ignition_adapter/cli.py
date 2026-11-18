@@ -10,7 +10,7 @@ from .core import AdapterError, BETA, LabTarget, encode_json
 from .mcp import PROTOCOL, VERIFIED_TOOLS, Catalyst
 from .rest import (
     ROUTE_TABLE, perspective_client_path, project_create_document, request_target,
-    tag_export_query, tag_import_query, validated_project,
+    tag_export_query, tag_import_query, tag_value_document, validated_project,
 )
 from . import ResearchAdapter
 
@@ -168,14 +168,14 @@ def plan(operation, version, project, args=None):
         }])
     if operation == 'tag.readValues':
         values = _args(args, {'document'})
-        encode_json(values.get('document'))
+        tag_value_document('read', values.get('document'))
         return _ready(operation, version, project, [{
             'method': 'GET', 'path': request_target('/data/api/v1/tags/read', project),
             'content_type': 'application/json', 'body': values['document'],
         }])
     if operation == 'tag.writeValues':
         values = _args(args, {'document', 'expected_count'})
-        encode_json(values.get('document'))
+        tag_value_document('write', values.get('document'))
         if type(values.get('expected_count')) is not int or values['expected_count'] < 1:
             raise AdapterError('tag_value_count_mismatch')
         return _ready(operation, version, project, [{
