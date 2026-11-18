@@ -66,18 +66,28 @@ REST 与 MCP 的 header 字典分别复制、分别使用，没有默认的认�
 `patch_existing_view(baseline_zip, existing_view_json_path, view_dict)` 只在内存中替换**已经存在**的 `view.json`，保留其他文件内容、原生 global-props、资源描述和 ZIP 条目元数据；不创建猜测的资源描述，不解压到磁盘，不验证第三方组件语义。
 
 ```python
-from research.ignition_adapter import patch_existing_view
+from research.ignition_adapter import ProjectConflict, changed_project_paths, patch_existing_view
 
 changed_zip = patch_existing_view(baseline_zip, verified_existing_path, edited_view)
-a.rest.import_project(changed_zip, allow_overwrite=True, disposable_project=True)
+a.rest.import_project(changed_zip, expected_current=baseline_zip, allow_overwrite=True, disposable_project=True)
 changed_readback = a.rest.export_project()
+changes = changed_project_paths(changed_zip, changed_readback)
+if changes:
+    raise ProjectConflict(changes)  # 意外变化需人工检查，停止恢复
 # 调用方在真实 Perspective 中验证实际生效内容；本库不制造浏览器证据。
 # 确认服务器仍是本实验状态后，显式恢复；不存在自动回滚或原子 compare-and-swap。
-a.rest.import_project(baseline_zip, allow_overwrite=True, disposable_project=True)
+a.rest.import_project(baseline_zip, expected_current=changed_readback, allow_overwrite=True, disposable_project=True)
 restored_readback = a.rest.export_project()
+changes = changed_project_paths(baseline_zip, restored_readback)
+if changes:
+    raise ProjectConflict(changes)
 ```
 
-上述是有副作用的方法调用示意，不是在本轮执行的操作。只对调用方确认自有、可丢弃且独占编辑的隔离项目使用。不要在 `finally` 中无条件覆盖未知并发改动；超时先读回判断，不自动重试。归档覆盖可能影响整个项目，普通 hash/readback 不能消除并发窗口。恢复成功还需要调用方验证内容与真实预览，不能只根据 import 200 或字节长度判断。
+每次导入前，适配层会重新导出项目，并按文件路径和解压后的字节比较。只含目录的 ZIP 条目（`ZipInfo.is_dir()`，或以 `/` 结尾且没有文件内容）不参与比较，压缩方式和条目顺序也不参与比较。文件新增、删除或内容变化会抛出 `ProjectConflict`，路径在 `.paths` 里；这一次调用只有导出 GET，没有导入 POST。`allow_overwrite` 和 `disposable_project` 仍然都要显式为真。比较和随后的导入是两次独立请求，中间仍有并发窗口。不自动重试，也不自动回滚。
+
+通过 CLI 执行 `project.importZip` 时，参数 JSON 里用 `zip_path` 指向待导入文件，用 `expected_path` 指向保存的预期归档，并显式设置 `allow_overwrite` 和 `disposable_project` 为 true。冲突时 CLI 以退出码 2 返回 `project_contents_changed`。OpenAPI 里没有项目导出路径时，`discover` 把 `project.importZip` 标成 absent。
+
+上述是有副作用的方法调用示意，不是在本轮执行的操作。只对调用方确认自有、可丢弃且独占编辑的隔离项目使用。不要在 `finally` 中无条件覆盖未知并发改动；超时先读回判断，不自动重试。归档覆盖可能影响整个项目，普通 hash/readback 不能消除并发窗口。恢复成功还需要调用方验证内容与真实预览，不能只根据 import 200 或字节长度判断。尾部带 `/` 的目录条目是合法打包，校验归档时会保留它们。
 
 ### Tag 分版本
 
@@ -130,4 +140,4 @@ MCP session ID 只存在于客户端内存，而且只在对应的 HTTP 200 正�
 
 ### 本轮验证结果
 
-38 项本地协议回归通过。对照 PR #3 后去掉了 Beta Tag 请求里未经归档的字段名包装，8.3.9 导入改为记录中的查询串加原始 JSON 字节，并补上项目创建。随后又按只读探针补上：无效 MCP 成功响应不再留下 READY 或新 session，严格 JSON 拒绝非有限数字，ZIP 条目名拒绝控制字符和盘符路径。MCP schema 的来源哈希仍对应固定提交 `e0e583bcc18b989bd2ba1edb6f771f00eb5df570`。此库为同步、单调用方研究接口，不支持多线程共享同一实例。没有运行任何既有 Gateway 的探测、写入或登录。这些测试仍不是 Mac 实机证据。
+`python3 -m unittest discover -v tests -t .` 为 42 项通过。项目覆盖在导入前按文件内容比较；只含目录的 ZIP 条目不算内容变化，文件增删改仍会阻止 POST。对照 PR #3 后去掉了 Beta Tag 请求里未经归档的字段名包装，8.3.9 导入改为记录中的查询串加原始 JSON 字节，并补上项目创建。无效 MCP 成功响应不再留下 READY 或新 session，严格 JSON 拒绝非有限数字，ZIP 条目名拒绝控制字符和盘符路径，但保留以 `/` 结尾的目录条目。MCP schema 的来源哈希仍对应固定提交 `e0e583bcc18b989bd2ba1edb6f771f00eb5df570`。此库为同步、单调用方研究接口，不支持多线程共享同一实例。没有运行任何既有 Gateway 的探测、写入或登录。这些测试仍不是 Mac 实机证据。

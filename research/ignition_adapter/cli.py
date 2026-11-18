@@ -62,6 +62,8 @@ def discover(version, document=None):
         else:
             item = paths.get(template)
             operations[name] = 'present' if isinstance(item, dict) and method.lower() in item else 'absent'
+    if operations.get('project.export') == 'absent':
+        operations['project.importZip'] = 'absent'
     mcp_state = 'blocked_by_version' if version != BETA else 'needs_explicit_endpoint'
     operations['preview.clientUrl'] = 'url_only'
     operations['mcp.listTools'] = mcp_state
@@ -129,10 +131,16 @@ def plan(operation, version, project, args=None):
             'accept': 'application/zip, */*', 'body': None,
         }])
     if operation == 'project.importZip':
-        values = _args(args, {'allow_overwrite', 'disposable_project', 'zip_path', 'zip_bytes'})
+        values = _args(args, {'allow_overwrite', 'disposable_project', 'zip_path', 'zip_bytes',
+                              'expected_path', 'expected_current'})
         if values.get('allow_overwrite') is not True or values.get('disposable_project') is not True:
             raise AdapterError('explicit_disposable_project_overwrite_required')
+        if values.get('expected_path') is None and values.get('expected_current') is None:
+            raise AdapterError('expected_archive_required')
         return _ready(operation, version, project, [{
+            'method': 'GET', 'path': request_target('/data/api/v1/projects/export/{name}', project),
+            'accept': 'application/zip, */*', 'body': None,
+        }, {
             'method': 'POST',
             'path': request_target('/data/api/v1/projects/import/{name}', project, [('overwrite', 'true')]),
             'content_type': 'application/zip', 'body': 'zip-bytes',
@@ -211,7 +219,8 @@ def execute(operation, *, base_url, version, project, rest_headers, args=None,
         return redact({'operation': operation, 'status': 'completed', 'network': False, 'result': {
             'url': adapter.preview_url(), 'perspective': adapter.identities.perspective.value,
         }}, secrets)
-    if operation == 'project.importZip' and not isinstance((args or {}).get('zip_bytes'), bytes):
+    if operation == 'project.importZip' and not all(isinstance((args or {}).get(key), bytes)
+                                                    for key in ('zip_bytes', 'expected_current')):
         raise AdapterError('invalid_arguments')
     if operation == 'tag.importConfiguration' and not isinstance((args or {}).get('document_bytes'), bytes):
         raise AdapterError('invalid_arguments')
@@ -239,7 +248,8 @@ def execute(operation, *, base_url, version, project, rest_headers, args=None,
         return finish({'byte_length': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()})
     if operation == 'project.importZip':
         return finish(adapter.rest.import_project(
-            args['zip_bytes'], allow_overwrite=True, disposable_project=True))
+            args['zip_bytes'], expected_current=args['expected_current'],
+            allow_overwrite=True, disposable_project=True))
     if operation == 'tag.importConfiguration':
         return finish(adapter.rest.import_tag_configuration(
             args.get('provider'), args.get('document_bytes'), path=args.get('path'),

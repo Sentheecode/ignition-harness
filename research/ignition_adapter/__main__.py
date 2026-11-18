@@ -45,9 +45,11 @@ def _read_bytes(path):
 def _prepare_args(operation, args):
     if not isinstance(args, dict):
         raise AdapterError('invalid_arguments')
-    if operation == 'project.importZip' and 'zip_path' in args:
+    if operation == 'project.importZip':
         args = dict(args)
-        args['zip_bytes'] = _read_bytes(args.pop('zip_path'))
+        for path_key, bytes_key in (('zip_path', 'zip_bytes'), ('expected_path', 'expected_current')):
+            if path_key in args:
+                args[bytes_key] = _read_bytes(args.pop(path_key))
     if operation == 'tag.importConfiguration' and 'document_path' in args:
         args = dict(args)
         args['document_bytes'] = _read_bytes(args.pop('document_path'))

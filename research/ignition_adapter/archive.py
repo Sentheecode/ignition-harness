@@ -39,6 +39,38 @@ def checked_archive(data):
     return data
 
 
+class ProjectConflict(AdapterError):
+    def __init__(self, paths):
+        self.paths = tuple(paths)
+        super().__init__('project_contents_changed')
+
+
+def _directory_only(info):
+    """Directory packing is not file content. Trailing-slash names stay legal in checked_archive."""
+    return info.is_dir() or (info.filename.endswith('/') and info.file_size == 0)
+
+
+def _file_payloads(archive):
+    payloads = {}
+    for info in archive.infolist():
+        if _directory_only(info):
+            continue
+        payloads[info.filename] = archive.read(info)
+    return payloads
+
+
+def changed_project_paths(expected, actual):
+    """Return differing file paths, ignoring directory entries, compression, and order."""
+    with zipfile.ZipFile(io.BytesIO(checked_archive(expected))) as before, \
+            zipfile.ZipFile(io.BytesIO(checked_archive(actual))) as after:
+        old, new = _file_payloads(before), _file_payloads(after)
+        changed = set(old) ^ set(new)
+        for path in set(old) & set(new):
+            if old[path] != new[path]:
+                changed.add(path)
+        return tuple(sorted(changed))
+
+
 def patch_existing_view(archive, resource_path, view):
     """Replace only an existing View JSON, retaining unknown files and ZIP metadata.
 

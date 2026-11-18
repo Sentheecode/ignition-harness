@@ -1,10 +1,11 @@
 """Research-only thin adapters. Importing/constructing them never connects a Gateway."""
-from .archive import patch_existing_view
+from .archive import ProjectConflict, changed_project_paths, patch_existing_view
 from .core import AdapterError, BETA, HTTP, IdentityStates, LabTarget, Status
 from .mcp import Catalyst
 from .rest import Rest, perspective_client_path, validated_project
 
-__all__ = ['ResearchAdapter', 'LabTarget', 'Status', 'AdapterError', 'patch_existing_view']
+__all__ = ['ResearchAdapter', 'LabTarget', 'Status', 'AdapterError', 'ProjectConflict',
+          'changed_project_paths', 'patch_existing_view']
 
 
 class ResearchAdapter:
