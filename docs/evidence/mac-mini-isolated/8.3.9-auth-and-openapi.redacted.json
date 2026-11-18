@@ -1,0 +1,19 @@
+{
+  "note": "No passwords, cookies, CSRF tokens, or session IDs are recorded here. Auth followed official Gateway pages and this Gateway's own OpenAPI; no Designer login or renewal API was invented. Artek-MCP is not installed, so there is no 8.3.9 MCP tools/list on this instance.",
+  "web_session": {
+    "entry": "GET /data/app/login redirected to this Gateway's official IdP.",
+    "idp": "authentication.js posted to /idp/default/authn/next-challenge and /idp/default/authn/submit-challenge/basic, then GET /idp/default/oidc/auth leading to /data/federate/callback/internal.",
+    "session": "A webui-sid-* cookie plus GET /data/app/session provided the csrfToken used with X-CSRF-Token on mutative REST calls."
+  },
+  "authenticated_openapi": {
+    "summary_file": "8.3.9-openapi.summary.json",
+    "path_count": 580,
+    "operation_count": 679,
+    "comparison": "The official Docker image on this Mac loaded the full official module set, so authenticated OpenAPI had 580 paths / 679 operations versus 389 on the slimmer Linux-extract environment used earlier."
+  },
+  "mcp": {
+    "artek_installed": false,
+    "anonymous_mcp_status": 404,
+    "note": "Official 8.3.9 has no Catalyst Agent MCP. Without Artek-MCP, /mcp stays 404 and tools/list cannot be collected on this Gateway."
+  }
+}

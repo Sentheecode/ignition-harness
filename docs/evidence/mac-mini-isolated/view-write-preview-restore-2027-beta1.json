@@ -1,0 +1,125 @@
+{
+  "collected_at": "2026-11-18T11:06:34+08:00",
+  "preview_restored_captured_at": "2026-11-18T11:08:00+08:00",
+  "timezone": "Asia/Singapore",
+  "host_label": "wubindeMac mini",
+  "environment": "isolated official Docker Gateway ignition-harness-2027-beta1 on this Mac; localhost only",
+  "production_gateway_untouched": true,
+  "project": "HarnessMacIsolated",
+  "pre_existing_project_names_at_start": [
+    "HarnessLab"
+  ],
+  "pre_existing_note": "HarnessLab was already present when this loop listed project names. It was not modified or deleted. This loop created HarnessMacIsolated.",
+  "contracts": {
+    "source": "this instance GET /openapi.json",
+    "create": "POST /data/api/v1/projects",
+    "export": "GET /data/api/v1/projects/export/{name}",
+    "import": "POST /data/api/v1/projects/import/{name}?overwrite=true",
+    "preview_path": "/data/perspective/client/HarnessMacIsolated",
+    "rest_auth": "official IdP web session cookie + X-CSRF-Token; not a Designer login API"
+  },
+  "steps": {
+    "login": {
+      "idp": "default",
+      "session_http": 200,
+      "csrf_present": true,
+      "session_cookie_present": true,
+      "landed_path": "/app",
+      "note": "Official IdP flow via /data/app/login and /idp/default/authn; values omitted. Not a Designer login or renewal API."
+    },
+    "list_names": {
+      "status": 200,
+      "names": [
+        "HarnessLab"
+      ]
+    },
+    "create": {
+      "status": 200,
+      "success": true,
+      "changes": [
+        {
+          "name": "HarnessMacIsolated"
+        }
+      ]
+    },
+    "export_native": {
+      "status": 200,
+      "bytes": 1110,
+      "sha256": "34deba59397d21b00347ccfbc24cc4896405d698fd461f7dfc2923b0896324c2"
+    },
+    "import_baseline": {
+      "status": 200,
+      "success": true,
+      "view_text": "Lab baseline",
+      "view_sha256": "02a6ba15053581e130d94e4a72f6f2cc4ebff41f34ecd7f09351edf27e87ee0c",
+      "page_sha256": "d848b13a10fc1d84d876f6c1d0b6f182fb37b77f6afa125fa5dd47b2053b313b",
+      "zip_sha256": "ccc846d6f1d1687f8ae453504892148c867033105d30e8d5b9bca65b732de479"
+    },
+    "readback_baseline": {
+      "status": 200,
+      "view_sha256": "02a6ba15053581e130d94e4a72f6f2cc4ebff41f34ecd7f09351edf27e87ee0c",
+      "matches_imported": true,
+      "contains_text": true
+    },
+    "import_changed": {
+      "status": 200,
+      "success": true,
+      "view_text": "Lab changed",
+      "view_sha256": "4f22209aa88c3132138d13d71c9ed4ab1849ca574994a1f531df1cd570fe5da4",
+      "page_sha256": "d848b13a10fc1d84d876f6c1d0b6f182fb37b77f6afa125fa5dd47b2053b313b",
+      "zip_sha256": "f73aaf4b1ab0a29e1c730b990acf4441df036057413969072658dfbf1f5ff10c"
+    },
+    "readback_changed": {
+      "status": 200,
+      "view_sha256": "4f22209aa88c3132138d13d71c9ed4ab1849ca574994a1f531df1cd570fe5da4",
+      "matches_imported": true,
+      "contains_text": true
+    },
+    "restore": {
+      "status": 200,
+      "success": true,
+      "restore_zip_sha256": "3b96c275a07ce74709215b90eee21f556b421c57e787ace3ff33e3b4a8d294be"
+    },
+    "readback_restored": {
+      "status": 200,
+      "view_sha256": "02a6ba15053581e130d94e4a72f6f2cc4ebff41f34ecd7f09351edf27e87ee0c",
+      "matches_baseline": true,
+      "contains_text": true
+    },
+    "preview": {
+      "url": "http://127.0.0.1:18088/data/perspective/client/HarnessMacIsolated",
+      "http_probe": {
+        "status": 200,
+        "content_type": "text/html;charset=utf-8"
+      },
+      "first_virtual_time_budget_screenshots": {
+        "note": "Headless Chrome --virtual-time-budget=15000 with a fresh unauthenticated profile captured Perspective splash screens for the first baseline and restore attempts. Those splash images are not used as preview evidence and are not committed.",
+        "baseline_splash_sha256": "6bbe235e7e3adfc97c653f95d8a8d2b29e8b222f61cbe77ffcdfff29ef4190fd",
+        "restored_splash_sha256": "e439af981fded3f8be4b86264eeb2a291bd7b2dcfdfe4eecfb149f86b65b1aba"
+      },
+      "changed": {
+        "file": "screenshots/perspective-changed.png",
+        "sha256": "a43672623097bb3bfef4da57f3dddb4caa6827bc1f9b29c5b736eb62186d0d82",
+        "visible_text": "Lab changed",
+        "method": "headless Chrome screenshot of the running Perspective client after the changed import",
+        "committed": true
+      },
+      "restored": {
+        "file": "screenshots/perspective-restored.png",
+        "sha256": "8a593adb9c62af5305a592a623cf12717465177001201df78b58c962a8208b6a",
+        "visible_text": "Lab baseline",
+        "method": "Chrome DevTools Protocol screenshot after a real wall-clock wait, taken after the confirmed baseline zip was re-imported; document title was Harness Mac Isolated; body text contained Lab baseline and not Lab changed",
+        "committed": true
+      }
+    }
+  },
+  "summary": {
+    "write_contract": "POST /data/api/v1/projects/import/{name}?overwrite=true from this instance OpenAPI",
+    "baseline_readback": true,
+    "changed_readback": true,
+    "restored_readback": true,
+    "preview_shows_changed_text": true,
+    "preview_shows_restored_baseline_text": true,
+    "zip_exports_not_committed": true
+  }
+}
