@@ -1,0 +1,80 @@
+{
+  "observed_at": {
+    "timezone": "Asia/Singapore",
+    "image_present_sgt": "2026-11-18 10:50\u201310:52",
+    "container_started_sgt": "2026-11-18 10:52:59",
+    "gateway_started_in_seconds": 8,
+    "trial_reset_sgt": "2026-11-18 10:53:05",
+    "trial_duration_seconds": 7200
+  },
+  "host": "wubindeMac mini",
+  "production_untouched": {
+    "path": "/usr/local/ignition",
+    "pid": 1373,
+    "listen": [
+      "*:8088",
+      "*:8060"
+    ],
+    "note": "This validation did not stop, start, reconfigure, or send traffic to the production Gateway."
+  },
+  "image": {
+    "name": "inductiveautomation/ignition:2027.2.0-beta1",
+    "platform": "linux/arm64",
+    "image_id_prefix": "d34130f02429",
+    "digest": "sha256:d34130f024296473aab1f0017b4d75870b02a9fbed56d18e0cdfff6804a88e50",
+    "size_gb_approx": 4.74,
+    "created_utc": "2026-11-02T21:32:04Z",
+    "build": "b2026110221"
+  },
+  "container": {
+    "name": "ignition-harness-2027-beta1",
+    "id_prefix": "b1a7bd2a1392",
+    "health": "healthy",
+    "restart_count": 0,
+    "data_volume": "ignition-harness-2027-beta1-data",
+    "bind_localhost_only": true,
+    "ports": {
+      "http": "127.0.0.1:18088->8088",
+      "gan": "127.0.0.1:18060->8060",
+      "https": "127.0.0.1:18443->8043"
+    },
+    "run_flags_nonsecret": {
+      "ACCEPT_IGNITION_EULA": "Y",
+      "IGNITION_EDITION": "standard",
+      "DISABLE_QUICKSTART": true,
+      "gateway_name": "ignition-harness-2027-beta1",
+      "public_address": "localhost",
+      "public_http_port": 18088,
+      "public_https_port": 18443,
+      "max_memory_mb": 1024
+    }
+  },
+  "anonymous_http": {
+    "StatusPing": {
+      "status": 200,
+      "state": "RUNNING"
+    },
+    "system_gwinfo": {
+      "status": 200,
+      "Version": "2027.2.0-beta1",
+      "PlatformName": "ignition-harness-2027-beta1"
+    },
+    "openapi.json": {
+      "status": 403
+    },
+    "mcp": {
+      "status": 404,
+      "note": "Anonymous /mcp is not the Catalyst MCP path."
+    },
+    "root": {
+      "status": 302,
+      "location": "/Start"
+    }
+  },
+  "modules_and_license": {
+    "catalyst_core_started": true,
+    "catalyst_agent_started": true,
+    "hasp": "Could not read license from HASP key. Driver not found (expected on this host).",
+    "trial": "LicenseManager trial time reset to 7200 seconds at 10:53:05 Asia/Singapore."
+  }
+}

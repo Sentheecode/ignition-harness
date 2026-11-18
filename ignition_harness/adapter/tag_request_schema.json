@@ -1,0 +1,22 @@
+{
+  "read": {
+    "type": "object",
+    "properties": [
+      "tags"
+    ],
+    "required": [
+      "tags"
+    ]
+  },
+  "write": {
+    "type": "object",
+    "properties": [
+      "tagPaths",
+      "values"
+    ],
+    "required": [
+      "tagPaths",
+      "values"
+    ]
+  }
+}

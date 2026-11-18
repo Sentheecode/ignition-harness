@@ -1,0 +1,145 @@
+{
+  "collected_at": "2026-11-18T10:19:37+08:00",
+  "timezone": "Asia/Singapore",
+  "host_label": "wubindeMac mini",
+  "environment": "isolated official Docker Gateway on this Mac; not the Linux-extracted OCI runtime used in prior main-branch evidence",
+  "production_gateway_untouched": {
+    "path": "/usr/local/ignition",
+    "listen": [
+      "*:8088",
+      "*:8060"
+    ],
+    "pid": 1373,
+    "note": "Observed only. Not modified, restarted, or used for probes."
+  },
+  "image": {
+    "reference": "inductiveautomation/ignition:8.3.9",
+    "platform": "linux/arm64",
+    "image_id": "sha256:28bd6b320157ec8dbbe465d0cd7c9f0ababfda4ff01c0bab982c0522a7b4eba2",
+    "repo_digest": "inductiveautomation/ignition@sha256:28bd6b320157ec8dbbe465d0cd7c9f0ababfda4ff01c0bab982c0522a7b4eba2",
+    "created": "2026-08-25T18:34:45Z"
+  },
+  "container": {
+    "name": "ignition-harness-8-3-9",
+    "id_prefix": "2a2eff3d4c78",
+    "created": "2026-11-18T10:12:21+08:00",
+    "started": "2026-11-18T10:12:21+08:00",
+    "health": "healthy",
+    "restart_policy": "unless-stopped",
+    "edition_env": "standard",
+    "disable_quickstart": true,
+    "eula_env_accepted_for_this_container": true,
+    "port_bindings": {
+      "8088/tcp": "127.0.0.1:28088",
+      "8060/tcp": "127.0.0.1:28060",
+      "8043/tcp": "127.0.0.1:28443"
+    },
+    "data_volume": "ignition-harness-8-3-9-data",
+    "admin_secret": "a local secret file is mounted for this isolated container; path and value omitted and not committed"
+  },
+  "gateway": {
+    "status_ping": {
+      "http_status": 200,
+      "body": {
+        "state": "RUNNING"
+      }
+    },
+    "gwinfo": {
+      "http_status": 200,
+      "ContextStatus": "RUNNING",
+      "PlatformName": "ignition-harness-8-3-9",
+      "Version": "8.3.9",
+      "OS": "Linux",
+      "RuntimeVersion": "17.0.19",
+      "RequireSsl": "false",
+      "AllowDesignerSSO": "false",
+      "RedundancyStatus": "Independent",
+      "RedundantState": "Good"
+    },
+    "commissioned": true,
+    "homepage_title": "ignition-harness-8-3-9",
+    "projects": "empty (only projects/.resources/.meta); no Perspective views present"
+  },
+  "anonymous_http_probes": {
+    "base": "http://127.0.0.1:28088",
+    "results": [
+      {
+        "path": "/StatusPing",
+        "http_status": 200
+      },
+      {
+        "path": "/system/gwinfo",
+        "http_status": 200
+      },
+      {
+        "path": "/openapi.json",
+        "http_status": 403,
+        "message": "Forbidden"
+      },
+      {
+        "path": "/mcp",
+        "http_status": 404,
+        "message": "Not Found"
+      },
+      {
+        "path": "/data/perspective",
+        "http_status": 404,
+        "message": "Not Found"
+      }
+    ]
+  },
+  "modules": {
+    "artek_mcp_installed": false,
+    "mcp_endpoint": "/mcp 404 with official modules only",
+    "source": "container data/modules.json ids and user-lib/modules filenames",
+    "official_module_ids": [
+      "com.inductiveautomation.alarm-notification",
+      "com.inductiveautomation.connectors.kafka",
+      "com.inductiveautomation.eam",
+      "com.inductiveautomation.eventstream",
+      "com.inductiveautomation.historian",
+      "com.inductiveautomation.historian.sql",
+      "com.inductiveautomation.jdbc.mariadb",
+      "com.inductiveautomation.jdbc.mssql",
+      "com.inductiveautomation.jdbc.postgresql",
+      "com.inductiveautomation.opcua",
+      "com.inductiveautomation.opcua.drivers.ablegacy",
+      "com.inductiveautomation.opcua.drivers.bacnet",
+      "com.inductiveautomation.opcua.drivers.dnp3",
+      "com.inductiveautomation.opcua.drivers.logix",
+      "com.inductiveautomation.opcua.drivers.micro800",
+      "com.inductiveautomation.opcua.drivers.mitsubishi",
+      "com.inductiveautomation.opcua.drivers.modbus",
+      "com.inductiveautomation.opcua.drivers.omron",
+      "com.inductiveautomation.opcua.drivers.siemens",
+      "com.inductiveautomation.opcua.drivers.siemens-symbolic",
+      "com.inductiveautomation.opcua.drivers.tcpudp",
+      "com.inductiveautomation.perspective",
+      "com.inductiveautomation.reporting",
+      "com.inductiveautomation.sfc",
+      "com.inductiveautomation.sms-notification",
+      "com.inductiveautomation.sqlbridge",
+      "com.inductiveautomation.symbol-factory",
+      "com.inductiveautomation.vision",
+      "com.inductiveautomation.webdev"
+    ],
+    "count": 29
+  },
+  "license_logs": {
+    "at": "2026-11-18T10:12:28+08:00",
+    "trial_time_reset_seconds": 7200,
+    "later": "2026-11-18T10:12:33+08:00 Could not read license from HASP key. Driver not found",
+    "hasp_license_present": false
+  },
+  "authenticated_openapi_or_view_write": "not attempted in this probe; no interactive operator login, and no invented Designer login API was used",
+  "beta1_on_this_mac": {
+    "image_present": false,
+    "container_present": false,
+    "pull_in_progress": {
+      "command": "docker pull --platform linux/arm64 inductiveautomation/ignition:2027.2.0-beta1",
+      "pid": 27492,
+      "started_local": "2026-11-18T10:10:33+08:00",
+      "still_running_at": "2026-11-18T10:22:00+08:00"
+    }
+  }
+}

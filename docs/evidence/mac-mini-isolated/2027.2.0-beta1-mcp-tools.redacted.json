@@ -1,0 +1,111 @@
+{
+  "observed_at_utc": "2026-11-18T02:59:17.971380+00:00",
+  "endpoint": "http://127.0.0.1:18088/data/catalyst-agent/mcp-servers/HarnessLab",
+  "initialize": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {
+      "tools": {
+        "listChanged": true
+      }
+    },
+    "serverInfo": {
+      "name": "HarnessLab",
+      "title": "Harness Lab",
+      "version": "1.0.0"
+    }
+  },
+  "session_header_present": true,
+  "tool_count": 4,
+  "tools": [
+    {
+      "name": "diagnostics",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "The tag path to get diagnostic info from. Paths follow a [Tag Provider]tag/path format, tag provider is required."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "title": "Tag Diagnostics",
+      "description": "Returns the diagnostics for the provided path"
+    },
+    {
+      "name": "realtime",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "One or more tag paths to read. Paths follow the format [providerName]path/to/tag."
+          }
+        },
+        "required": [
+          "paths"
+        ]
+      },
+      "title": "Read Realtime Tags",
+      "description": "Reads live tag values directly from the tag subsystem, returning value, quality, timestamp, and valueType for each requested path. valueType names the type of the value that came back (Int1, Int4, Float8, Boolean, String, DateTime, ...) and is null when the read produced no value, so it is not a substitute for a tag's configured data type -- use the query tool for that."
+    },
+    {
+      "name": "query",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Filters for tags with a matching name. Paths follow a [Tag Provider]tag/path format. Supports the * character as a wildcard, tag provider is required."
+          },
+          "filters": {
+            "type": "object",
+            "properties": {
+              "quality": {
+                "type": "string",
+                "enum": [
+                  "Good",
+                  "Uncertain",
+                  "Bad",
+                  "Error"
+                ],
+                "description": "Filters for tags with a matching quality"
+              },
+              "maxResults": {
+                "type": "integer",
+                "description": "Limit the number of returned matching results.  Maximum supported response size is 500 elements."
+              }
+            },
+            "required": [],
+            "description": "The filters that can be applied to the queried tag paths"
+          },
+          "continuationPoint": {
+            "type": "string",
+            "description": "The continuation point from a previous query.  If the number of results exceed the maxResults limit then a continuationPoint is returned so that subsequent calls can return the remaining elements."
+          }
+        },
+        "required": [
+          "path"
+        ]
+      },
+      "title": "Query Tags",
+      "description": "Queries the tag provider for all matching tags. Each result gives the tag's fullPath and tagKind. For a value-holding tag, tagKind is its value source and dataType is what it holds (Int4, Boolean, String, ...). The value sources are: memory and opc, which are ordinary writable tags; expr and db, which are computed and reject writes; derived and reference, which write through to the tag they point at, so a write is meaningful; and sim, which accepts a write but republishes a simulated value on a timer, so the write does not survive. Treat an unrecognized tagKind on a tag that has a dataType as a value source you have not been told about: report it rather than assuming it is writable. For a node that holds no value, tagKind is the node type instead (Folder, UdtInstance, UdtType, Provider) and, for UDT instances and types, typeId names the UDT definition."
+    },
+    {
+      "name": "providers",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "title": "Tag Providers",
+      "description": "Returns the available tag providers for querying tags"
+    }
+  ],
+  "scope": "protocol discovery only; no tools executed"
+}

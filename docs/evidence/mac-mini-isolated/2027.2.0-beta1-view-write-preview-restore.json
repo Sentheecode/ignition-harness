@@ -1,0 +1,90 @@
+{
+  "timezone": "Asia/Singapore",
+  "project": "HarnessLab",
+  "tag": "[default]HarnessLab/Temperature",
+  "steps": [
+    {
+      "action": "create_project",
+      "method": "POST /data/api/v1/projects",
+      "name": "HarnessLab",
+      "result": "success"
+    },
+    {
+      "action": "create_memory_tag",
+      "method": "POST /data/api/v1/tags/configuration",
+      "path": "[default]HarnessLab/Temperature",
+      "result": "successCount 1"
+    },
+    {
+      "action": "import_fixtures",
+      "method": "POST /data/api/v1/projects/import/HarnessLab?overwrite=true",
+      "content_type": "application/zip",
+      "note": "Native project.json and global-props were kept; research/fixtures/project-additions were merged. Immediate GET /data/perspective/client/HarnessLab after import briefly returned 404; a later GET returned 200.",
+      "result": "success"
+    },
+    {
+      "action": "write_tag",
+      "method": "POST /data/api/v1/tags/write",
+      "path": "[default]HarnessLab/Temperature",
+      "value": 42.5,
+      "http_status": 200,
+      "quality_code": 192,
+      "observed_at_utc": "2026-11-18T03:00:56Z",
+      "observed_at_sgt": "2026-11-18 11:00:56"
+    },
+    {
+      "action": "read_tag",
+      "method": "GET /data/api/v1/tags/read (JSON body)",
+      "path": "[default]HarnessLab/Temperature",
+      "value": 42.5,
+      "quality_code": 192,
+      "observed_at_utc": "2026-11-18T03:00:56Z"
+    },
+    {
+      "action": "gateway_log_marker",
+      "text": "HARNESS_LAB_STARTUP_V1_VERIFIED collection=HarnessLab",
+      "observed_at_sgt": "2026-11-18 11:00:56"
+    },
+    {
+      "action": "perspective_preview_after_write",
+      "client_url": "http://127.0.0.1:18088/data/perspective/client/HarnessLab",
+      "shell_url_note": "/app/perspective/client/HarnessLab is only the Gateway SPA shell, not the live client.",
+      "capture": "Headless Chrome via Chrome DevTools Protocol, waiting for visible 42.5 and Script V2 text. --virtual-time-budget was not used because it can return while the client still shows Creating new client.",
+      "screenshot": "screenshots/2027-perspective-42.5.png",
+      "visible_text": [
+        "Ignition Harness \u2014 Database Preview",
+        "42.5",
+        "Script V2 OK: 42.5",
+        "ERROR",
+        "Run isolated Tag event test",
+        "Connected: ignition-harness-2027-beta1"
+      ],
+      "table_error": "The samples table shows ERROR because the HarnessLabDB SQLite connection and samples table were not created on this Mac pass. Tag and script labels still prove the View write and preview.",
+      "connection_label_note": "Page innerText also contained the string No Connection to Gateway alongside Connected: ignition-harness-2027-beta1. The screenshot shows the view, tag, and script labels clearly."
+    },
+    {
+      "action": "restore_tag",
+      "method": "POST /data/api/v1/tags/write then GET /data/api/v1/tags/read",
+      "path": "[default]HarnessLab/Temperature",
+      "value": 21.5,
+      "http_status": 200,
+      "quality_code": 192,
+      "observed_at_utc": "2026-11-18T03:03:47.190Z",
+      "observed_at_sgt": "2026-11-18 11:03:47"
+    },
+    {
+      "action": "perspective_preview_after_restore",
+      "client_url": "http://127.0.0.1:18088/data/perspective/client/HarnessLab",
+      "screenshot": "screenshots/2027-perspective-restored-21.5.png",
+      "visible_text": [
+        "Ignition Harness \u2014 Database Preview",
+        "21.5",
+        "Script V2 OK: 21.5",
+        "ERROR",
+        "Run isolated Tag event test",
+        "Connected: ignition-harness-2027-beta1"
+      ],
+      "remaining_trial_shown": "01:49:17 at capture time"
+    }
+  ]
+}

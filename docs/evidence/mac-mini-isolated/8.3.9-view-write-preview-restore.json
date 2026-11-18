@@ -1,0 +1,178 @@
+{
+  "timezone": "Asia/Singapore",
+  "project": "HarnessLab",
+  "tag": "[default]HarnessLab/Temperature",
+  "tag_api_note": "Beta /data/api/v1/tags/configuration, /tags/read and /tags/write are not used here. This 8.3.9 pass used the already-documented import/export configuration path. Importing a Memory Tag value is not a validated general runtime write API.",
+  "steps": [
+    {
+      "action": "create_project",
+      "method": "POST /data/api/v1/projects",
+      "name": "HarnessLab",
+      "http_status": 200,
+      "result": {
+        "success": true,
+        "changes": [
+          {
+            "name": "HarnessLab"
+          }
+        ]
+      }
+    },
+    {
+      "action": "import_fixtures",
+      "method": "POST /data/api/v1/projects/import/HarnessLab?overwrite=true",
+      "content_type": "application/zip",
+      "note": "Native project.json and global-props were kept; research/fixtures/project-additions were merged.",
+      "http_status": 200,
+      "result": {
+        "success": true,
+        "changes": [
+          {
+            "name": "HarnessLab"
+          }
+        ]
+      },
+      "observed_at_sgt": "2026-11-18 11:10"
+    },
+    {
+      "action": "gateway_log_marker",
+      "text": "HARNESS_LAB_STARTUP_V1_VERIFIED collection=HarnessLab",
+      "observed_at_sgt": "2026-11-18 11:10:04"
+    },
+    {
+      "action": "import_memory_tag",
+      "method": "POST /data/api/v1/tags/import?provider=default&type=json&collisionPolicy=Abort",
+      "content_type": "application/octet-stream",
+      "path": "[default]HarnessLab/Temperature",
+      "value": 42.5,
+      "http_status": 200,
+      "body": {
+        "successCount": 2,
+        "failureCount": 0,
+        "failures": []
+      }
+    },
+    {
+      "action": "export_tag_after_write",
+      "method": "GET /data/api/v1/tags/export?provider=default&type=json&path=HarnessLab",
+      "http_status": 200,
+      "body": {
+        "name": "HarnessLab",
+        "tagType": "Folder",
+        "tags": [
+          {
+            "dataType": "Float8",
+            "defaultValue": 42.5,
+            "engUnit": "C",
+            "name": "Temperature",
+            "tagType": "AtomicTag",
+            "value": 42.5,
+            "valueSource": "memory"
+          }
+        ]
+      }
+    },
+    {
+      "action": "create_sqlite_and_connection",
+      "file": "jdbc:sqlite:${data}/harnesslab.db",
+      "table": "samples(id INTEGER PRIMARY KEY, label TEXT, reading REAL)",
+      "rows": [
+        [
+          "Pump A",
+          42.5
+        ],
+        [
+          "Pump B",
+          72.5
+        ],
+        [
+          "Pump C",
+          88.5
+        ]
+      ],
+      "method": "POST /data/api/v1/resources/ignition/database-connection",
+      "body_shape": "OpenAPI requires a JSON array. Each item needs name plus config.driver, config.translator, and config.connectURL.",
+      "http_status": 200,
+      "result": {
+        "success": true,
+        "name": "HarnessLabDB",
+        "type": "ignition/database-connection",
+        "collection": "core"
+      },
+      "observed_at_utc": "2026-11-18T03:10:58Z",
+      "observed_at_sgt": "2026-11-18 11:10:58"
+    },
+    {
+      "action": "perspective_preview_after_write",
+      "client_url": "http://127.0.0.1:28088/data/perspective/client/HarnessLab",
+      "capture": "Headless Chrome via Chrome DevTools Protocol, waiting for visible 42.5 and Script V2 text.",
+      "screenshot": "screenshots/8.3.9-perspective-42.5.png",
+      "visible_text": [
+        "Ignition Harness \u2014 Database Preview",
+        "42.5",
+        "Script V2 OK: 42.5",
+        "Pump A",
+        "42.5",
+        "Pump B",
+        "72.5",
+        "Pump C",
+        "88.5",
+        "Run isolated Tag event test",
+        "Connected: ignition-harness-8-3-9"
+      ],
+      "connection_label_note": "Page innerText also contained the string No Connection to Gateway alongside Connected: ignition-harness-8-3-9. The screenshot shows the view, tag, script labels, and table rows clearly.",
+      "remaining_trial_shown": "01:01:25 at capture time"
+    },
+    {
+      "action": "restore_tag",
+      "method": "POST /data/api/v1/tags/import?provider=default&type=json&collisionPolicy=MergeOverwrite&path=HarnessLab",
+      "content_type": "application/octet-stream",
+      "value": 21.5,
+      "http_status": 200,
+      "body": {
+        "successCount": 1,
+        "failureCount": 0,
+        "failures": []
+      }
+    },
+    {
+      "action": "export_tag_after_restore",
+      "method": "GET /data/api/v1/tags/export?provider=default&type=json&path=HarnessLab",
+      "http_status": 200,
+      "body": {
+        "name": "HarnessLab",
+        "tagType": "Folder",
+        "tags": [
+          {
+            "dataType": "Float8",
+            "defaultValue": 21.5,
+            "engUnit": "C",
+            "name": "Temperature",
+            "tagType": "AtomicTag",
+            "value": 21.5,
+            "valueSource": "memory"
+          }
+        ]
+      }
+    },
+    {
+      "action": "perspective_preview_after_restore",
+      "client_url": "http://127.0.0.1:28088/data/perspective/client/HarnessLab",
+      "screenshot": "screenshots/8.3.9-perspective-restored-21.5.png",
+      "visible_text": [
+        "Ignition Harness \u2014 Database Preview",
+        "21.5",
+        "Script V2 OK: 21.5",
+        "Pump A",
+        "42.5",
+        "Pump B",
+        "72.5",
+        "Pump C",
+        "88.5",
+        "Run isolated Tag event test",
+        "Connected: ignition-harness-8-3-9"
+      ],
+      "remaining_trial_shown": "01:01:23 at capture time"
+    }
+  ]
+}
