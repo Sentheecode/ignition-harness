@@ -1,8 +1,8 @@
 # Mac mini 隔离 Gateway 实机补充（2026-11-18）
 
-这是一份新增补充，不改写已有历史调查或 Linux 解包验证文档。先前 main 上的 [8.3.9 运行时验证](runtime-validation-8.3.9.md) 与 [2027.2.0-beta1 运行时验证](runtime-validation-2027-beta1.md) 使用的是官方 OCI 在 Linux 上解包运行的证据，不是这台 Mac 上的隔离 Docker Gateway。
+这是一份新增补充，不改写已有历史调查或 Linux 解包验证文档。先前 main 上的 [8.3.9 运行时验证](runtime-validation-8.3.9.md) 与 [2027.2.0-beta1 运行时验证](runtime-validation-2027-beta1.md) 使用的是官方 OCI 在 Linux 上解包运行的证据，不是这台 Mac 上的隔离 Docker Gateway。本文件记录的是 wubindeMac mini 上隔离容器的实机结果。
 
-采集时间：2026-11-18 10:19–10:22（Asia/Singapore）。主机：wubindeMac mini。原始脱敏记录：[evidence/mac-mini-isolated/8.3.9-status-2026-11-18.json](evidence/mac-mini-isolated/8.3.9-status-2026-11-18.json)。未提交第三方模块二进制、凭据或内部过程报告。未改动、重启或探测生产性质的 `/usr/local/ignition`（pid 1373，监听 `*:8088` 与 `*:8060`）。
+未提交第三方模块二进制、凭据、Cookie、CSRF、会话 ID 或 API token 密钥。未改动、重启或探测生产性质的 `/usr/local/ignition`（pid 1373，监听 `*:8088` 与 `*:8060`）。
 
 ## 已起来的隔离 8.3.9
 
@@ -12,41 +12,47 @@
 - `127.0.0.1:28060` → 8060
 - `127.0.0.1:28443` → 8043
 
-`GET http://127.0.0.1:28088/StatusPing` 返回 200，`{"state":"RUNNING"}`。`GET /system/gwinfo` 返回 200，关键字段：`Version=8.3.9`，`PlatformName=ignition-harness-8-3-9`，`ContextStatus=RUNNING`，`RuntimeVersion=17.0.19`，`OS=Linux`，`RequireSsl=false`，`AllowDesignerSSO=false`。容器内 `commissioning.json` 为已 commissioning。首页标题为 `ignition-harness-8-3-9`。数据卷 `ignition-harness-8-3-9-data` 中的 `projects` 目录只有 `.resources/.meta`，尚无 Perspective 项目或 View。
+`GET http://127.0.0.1:28088/StatusPing` 返回 200，`{"state":"RUNNING"}`。`GET /system/gwinfo` 返回 200，关键字段：`Version=8.3.9`，`PlatformName=ignition-harness-8-3-9`，`ContextStatus=RUNNING`，`RuntimeVersion=17.0.19`，`OS=Linux`，`RequireSsl=false`，`AllowDesignerSSO=false`。容器内 `commissioning.json` 为已 commissioning。首页标题为 `ignition-harness-8-3-9`。数据卷为 `ignition-harness-8-3-9-data`。原始脱敏记录：[evidence/mac-mini-isolated/8.3.9-status-2026-11-18.json](evidence/mac-mini-isolated/8.3.9-status-2026-11-18.json)。
 
-## 匿名 HTTP 与 MCP
+匿名探测（无认证头，也未编造 Designer 登录/续期 API）：`/StatusPing` 200，`/system/gwinfo` 200，`/openapi.json` 403 Forbidden，`/mcp` 404 Not Found。`data/modules.json` 共 29 个官方模块，**未安装 Artek-MCP**，因此这台 8.3.9 上没有可探测的 `/mcp`，无法采集实机 `tools/list`。容器日志 10:12:28 `Trial time reset. Time remaining = 7200.`，10:12:33 `Could not read license from HASP key. Driver not found`。未许可试用约到 2026-11-18 12:12（Asia/Singapore）。截至本文件 2027 补充写入时，该隔离 8.3.9 容器仍在健康运行；本轮尚未在这台 8.3.9 上做已认证 OpenAPI 或 View 写入/预览/恢复。
 
-匿名探测（无认证头，也未编造 Designer 登录/续期 API）：
+## 已起来的隔离 2027.2.0-beta1
 
-| 路径 | 结果 |
-|---|---|
-| `/StatusPing` | 200 |
-| `/system/gwinfo` | 200 |
-| `/openapi.json` | 403 Forbidden |
-| `/mcp` | 404 Not Found |
-| `/data/perspective` | 404 Not Found |
+官方镜像 `inductiveautomation/ignition:2027.2.0-beta1`（`linux/arm64`，image/repo digest `sha256:d34130f024296473aab1f0017b4d75870b02a9fbed56d18e0cdfff6804a88e50`，镜像 ID 前缀 `d34130f02429`，约 4.74GB，创建于 2026-11-02T21:32:04Z，build `b2026110221`）于 2026-11-18 约 10:50–10:52（Asia/Singapore）拉到本机。容器 `ignition-harness-2027-beta1`（id 前缀 `b1a7bd2a1392`）于 10:52:59 启动，Gateway 约 8 秒内起来，健康检查 healthy，`restartCount` 为 0。端口仅绑定本机回环：
 
-匿名 `/openapi.json` 403 与 main 上 Linux 解包证据一致。本轮没有进行交互式登录，因此没有在这台隔离 Gateway 上取得已认证 OpenAPI，也没有做 View 写入、预览或恢复。
+- `127.0.0.1:18088` → 8088
+- `127.0.0.1:18060` → 8060
+- `127.0.0.1:18443` → 8043
 
-## 模块与许可
+数据卷 `ignition-harness-2027-beta1-data`。启动参数（不含密钥）：`ACCEPT_IGNITION_EULA=Y`，`IGNITION_EDITION=standard`，`DISABLE_QUICKSTART`，`-n ignition-harness-2027-beta1 -a localhost -h 18088 -s 18443 -m 1024`。匿名 `GET /StatusPing` 为 RUNNING；`/system/gwinfo` 为 `Version=2027.2.0-beta1`、`PlatformName=ignition-harness-2027-beta1`；匿名 `/openapi.json` 403，`/mcp` 404，`/` 302 到 `/Start`。Catalyst Core 与 Catalyst Agent 已启动。10:53:05 `LicenseManager` 将试用重置为 7200 秒；HASP 为 `Driver not found`（本机预期现象）。该 Beta 不得用于生产，现有许可证与该 Beta 不兼容。
 
-`data/modules.json` 共 29 个模块，均为 `com.inductiveautomation.*` 官方模块（含 Perspective 与 WebDev）。**未安装 Artek-MCP**。因此官方 8.3.9 镜像上不存在可探测的 `/mcp` 服务，无法在此环境采集实机 `tools/list`。Artek 模块二进制不会提交进本仓库；若要继续 8.3.9 + Artek 验证，需要操作者把已取得的 `.modl` 安装到这个隔离容器（不要装到生产 Gateway）。供应商下载页需要填写资料才能取得模块，此前 Linux 验证也因此未安装。
+脱敏状态记录：[evidence/mac-mini-isolated/2027.2.0-beta1-status-2026-11-18.json](evidence/mac-mini-isolated/2027.2.0-beta1-status-2026-11-18.json)。
 
-容器日志（Asia/Singapore）：
+## 2027 认证、OpenAPI 与 MCP tools/list
 
-- 10:12:28 `LicenseManager`: `Trial time reset. Time remaining = 7200.`
-- 10:12:33 `LicenseManager`: `Could not read license from HASP key. Driver not found`
+登录走官方入口：`GET /data/app/login` 转到本 Gateway 的官方 IdP；`authentication.js` 向 `/idp/default/authn/next-challenge` 与 `/idp/default/authn/submit-challenge/basic` 提交挑战，再经 `/idp/default/oidc/auth` 到达 `/data/federate/callback/internal`。随后用 Web 会话 Cookie 与 `GET /data/app/session` 取得的 CSRF 调用变更型 REST。没有编造 Designer 登录或续期 API。
 
-未发现 HASP 许可。按日志，未许可试用从 10:12:28 起约两小时。
+已认证 OpenAPI 为 696 条路径、809 个操作，高于先前 Linux 解包环境的 455 条路径；官方 Docker 镜像在本机加载了完整官方模块集。摘要：[evidence/mac-mini-isolated/2027.2.0-beta1-openapi.summary.json](evidence/mac-mini-isolated/2027.2.0-beta1-openapi.summary.json)。认证说明（无密钥）：[evidence/mac-mini-isolated/2027.2.0-beta1-auth-and-openapi.redacted.json](evidence/mac-mini-isolated/2027.2.0-beta1-auth-and-openapi.redacted.json)。
 
-## 2027.2.0-beta1 在本机的状态
+Catalyst MCP 不接受 Web 会话，需要 `X-Ignition-API-Token`（`keyName:secret`）。token 通过本 Gateway OpenAPI 中的 `POST /data/api/v1/api-token/generate` 与 `POST /data/api/v1/resources/ignition/api-token` 创建；`securityLevels` 必须是本 Gateway OpenAPI / security-properties 中的对象树（Authenticated → Roles → Administrator），论坛常见的字符串形式 `Authenticated/Roles/Administrator` 在本机返回 422 且不会持久化 token。MCP server 通过 `POST /data/api/v1/resources/com.inductiveautomation.catalyst.agent/mcp-server-host` 创建。本轮 token 名为 `HarnessLabMac`，MCP server 名为 `HarnessLab`，端点为 `http://127.0.0.1:18088/data/catalyst-agent/mcp-servers/HarnessLab`，协议 `2025-06-18`。
 
-截至 2026-11-18 10:22（Asia/Singapore），本机还没有 `inductiveautomation/ignition:2027.2.0-beta1` 镜像，也没有对应隔离容器。已有进程 `docker pull --platform linux/arm64 inductiveautomation/ignition:2027.2.0-beta1`（pid 27492，约 10:10:33 开始）仍在进行。镜像就绪后，启动该隔离容器仍需操作者接受官方 Docker EULA（`ACCEPT_IGNITION_EULA=Y`）。该 Beta 不得用于生产，现有许可证与该 Beta 不兼容。
+`research/probe_mcp.py` 实机 `tools/list` 成功，发现 4 个工具：`diagnostics`、`realtime`、`query`、`providers`。工具名与 schema 与先前 Linux 解包证据一致。脱敏记录（含 schema，不含 token 或会话 ID，仅记录 `session_header_present: true`）：[evidence/mac-mini-isolated/2027.2.0-beta1-mcp-tools.redacted.json](evidence/mac-mini-isolated/2027.2.0-beta1-mcp-tools.redacted.json)。采集时间 2026-11-18 10:59:17（Asia/Singapore，对应 `2026-11-18T02:59:17Z`）。
+
+## 2027 View 写入、预览与恢复
+
+步骤与时间（Asia/Singapore）见 [evidence/mac-mini-isolated/2027.2.0-beta1-view-write-preview-restore.json](evidence/mac-mini-isolated/2027.2.0-beta1-view-write-preview-restore.json)。摘要：
+
+1. `POST /data/api/v1/projects` 创建项目 `HarnessLab`。
+2. `POST /data/api/v1/tags/configuration` 创建 Memory Tag `[default]HarnessLab/Temperature`（successCount 1）。
+3. `POST /data/api/v1/projects/import/HarnessLab?overwrite=true` 导入夹具（保留原生 `project.json` / `global-props`，合并 `research/fixtures/project-additions`）。导入后立刻访问客户端路径曾短暂 404，稍后 `GET /data/perspective/client/HarnessLab` 返回 200。`/app/perspective/client/HarnessLab` 只是 Gateway SPA 外壳。
+4. `POST /data/api/v1/tags/write` 写入 `42.5`（quality 192），`GET /data/api/v1/tags/read` 读回 `42.5`（2026-11-18 11:00:56 / `2026-11-18T03:00:56Z`）。Gateway 日志同时出现 `HARNESS_LAB_STARTUP_V1_VERIFIED collection=HarnessLab`。
+5. 用 Chrome DevTools Protocol 等待页面出现 `42.5` 与 `Script V2` 后截图。可见文字包括：`Ignition Harness — Database Preview`、`42.5`、`Script V2 OK: 42.5`，以及按钮 `Run isolated Tag event test`。截图：[evidence/mac-mini-isolated/screenshots/2027-perspective-42.5.png](evidence/mac-mini-isolated/screenshots/2027-perspective-42.5.png)。表格显示 `ERROR`，因为本轮尚未在这台隔离 Gateway 上创建 `HarnessLabDB` SQLite 连接和 `samples` 表；Tag 与脚本标签仍能证明 View 写入和预览。页面 innerText 里同时出现过 `No Connection to Gateway` 与 `Connected: ignition-harness-2027-beta1`；截图本身清楚显示了视图、Tag 与脚本标签。
+6. 将 Tag 写回 `21.5`（quality 192），`2026-11-18 11:03:47`（`2026-11-18T03:03:47.190Z`）读回 `21.5`。再次截图可见 `21.5` 与 `Script V2 OK: 21.5`：[evidence/mac-mini-isolated/screenshots/2027-perspective-restored-21.5.png](evidence/mac-mini-isolated/screenshots/2027-perspective-restored-21.5.png)。
 
 ## 尚未在这台 Mac 隔离环境完成的验收
 
-- 8.3.9 实机 `tools/list`：被缺失的 Artek-MCP 阻塞（`/mcp` 404 为直接证据）。
-- 一次真实 View 写入 + 预览 + 恢复：被“尚未登录这台隔离 Gateway、且尚无 View 资源”阻塞，不是因为官方 API 不存在。Linux 解包环境已用已认证 OpenAPI 做过项目创建/导入与 Perspective 预览，见 [runtime-validation-8.3.9.md](runtime-validation-8.3.9.md)；本轮不把那次结果记成这台 Mac 隔离 Gateway 的实机结果。
-- 2027.2.0-beta1 / Catalyst 在这台 Mac 上的 `tools/list` 与写入预览：被镜像仍在拉取、以及启动前的 EULA 确认阻塞。
+- 8.3.9 实机 `tools/list`：仍被缺失的 Artek-MCP 阻塞（`/mcp` 404 为直接证据）。不要把模块二进制提交进仓库，也不要装到生产 Gateway。
+- 8.3.9 在这台 Mac 隔离 Gateway 上的已认证 OpenAPI 与一次真实 View 写入 + 预览 + 恢复：尚未做。Linux 解包环境已有对应证据，见 [runtime-validation-8.3.9.md](runtime-validation-8.3.9.md)；不能把那次结果记成这台 Mac 的实机结果。8.3.9 的 Tag API 与 2027 Beta 不同（import/export，而不是 configuration/read/write）。
+- 可选：在隔离 2027 Gateway 上创建 `HarnessLabDB` 与 `samples` 表，以消除预览页表格的 `ERROR`。
 
-产品界面与薄适配层在这台隔离环境完成 `tools/list` 以及 View 写入/预览/恢复之前保持阻塞。未实现伪造的 Designer 登录客户端，现在也不做 Companion 模块。
+2027 在这台 Mac 隔离环境上的 `tools/list` 以及 View 写入/预览/恢复已经完成。产品界面与薄适配层在 8.3.9 实机 MCP 仍缺模块的情况下，是否可以只按 2027 基线推进，仍按仓库原有研究边界处理。未实现伪造的 Designer 登录客户端，现在也不做 Companion 模块。

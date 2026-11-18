@@ -1,0 +1,25 @@
+{
+  "note": "No passwords, cookies, CSRF tokens, session IDs, or API token secrets are recorded here. Auth followed official Gateway pages and this Gateway's own OpenAPI; no Designer login or renewal API was invented.",
+  "web_session": {
+    "entry": "GET /data/app/login redirected to this Gateway's official IdP.",
+    "idp": "authentication.js posted to /idp/default/authn/next-challenge and /idp/default/authn/submit-challenge/basic, then GET /idp/default/oidc/auth leading to /data/federate/callback/internal.",
+    "session": "A webui-sid-* cookie plus GET /data/app/session provided the csrfToken used with X-CSRF-Token on mutative REST calls."
+  },
+  "api_token_and_mcp": {
+    "mcp_auth": "Catalyst MCP did not accept the Web UI session. It required header X-Ignition-API-Token with value format keyName:secret.",
+    "generate": "POST /data/api/v1/api-token/generate",
+    "persist": "POST /data/api/v1/resources/ignition/api-token",
+    "securityLevels": "Must be the object tree from this Gateway's OpenAPI / security-properties (Authenticated \u2192 Roles \u2192 Administrator). A string path such as Authenticated/Roles/Administrator returned 422 and did not persist a token.",
+    "token_name": "HarnessLabMac",
+    "mcp_server_create": "POST /data/api/v1/resources/com.inductiveautomation.catalyst.agent/mcp-server-host",
+    "mcp_server_name": "HarnessLab",
+    "endpoint": "http://127.0.0.1:18088/data/catalyst-agent/mcp-servers/HarnessLab",
+    "protocol": "2025-06-18"
+  },
+  "authenticated_openapi": {
+    "summary_file": "2027.2.0-beta1-openapi.summary.json",
+    "path_count": 696,
+    "operation_count": 809,
+    "comparison": "The official Docker image on this Mac loaded the full official module set, so authenticated OpenAPI had 696 paths / 809 operations versus 455 on the slimmer Linux-extract environment used earlier."
+  }
+}
