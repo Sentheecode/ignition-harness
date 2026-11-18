@@ -98,24 +98,57 @@ def project_create_document(project):
     return {'name': validated_project(project)}
 
 
-def tag_value_document(kind, document):
-    """Check a Beta read or write document against the top-level excerpt only.
+def _value_matches(value, schema):
+    """Match only declared JSON types. values items stay unchecked."""
+    if not isinstance(schema, dict):
+        return False
+    declared = schema.get('type')
+    if declared == 'array':
+        if not isinstance(value, list):
+            return False
+        items = schema.get('items')
+        if isinstance(items, dict) and items.get('type') == 'string':
+            return all(isinstance(item, str) for item in value)
+        return True
+    if declared == 'string':
+        return isinstance(value, str)
+    if declared == 'object':
+        return isinstance(value, dict)
+    return True
 
-    The excerpt names object fields. It does not describe array items, and this
-    function does not rename or rebuild the caller's document.
-    """
+
+def tag_value_document(kind, document):
+    """Check a Beta read or write document. Do not rename or rebuild it."""
     spec = _TAG_FIELDS.get(kind)
-    allowed = spec.get('properties') if isinstance(spec, dict) else None
+    properties = spec.get('properties') if isinstance(spec, dict) else None
     required = spec.get('required') if isinstance(spec, dict) else None
     if (not isinstance(spec, dict) or spec.get('type') != 'object' or
-            not isinstance(allowed, list) or not isinstance(required, list) or
+            not isinstance(properties, dict) or not isinstance(required, list) or
             not isinstance(document, dict) or not set(required) <= set(document) or
-            not set(document) <= set(allowed)):
+            not set(document) <= set(properties)):
         raise AdapterError('tag_document_not_in_excerpt')
+    for name, schema in properties.items():
+        if name in document and not _value_matches(document[name], schema):
+            raise AdapterError('tag_document_type_mismatch')
     if kind == 'write':
-        paths, values = document.get('tagPaths'), document.get('values')
+        paths, values = document['tagPaths'], document['values']
         if isinstance(paths, list) and isinstance(values, list) and len(paths) != len(values):
             raise AdapterError('tag_paths_values_length_mismatch')
+    return document
+
+
+def tag_configuration_document(document):
+    """Type-check only official configuration properties that the caller included.
+
+    The official request schema has no type, required, or additionalProperties.
+    Unknown keys stay, and collisionPolicy text is not an enum.
+    """
+    if not isinstance(document, dict):
+        return document
+    properties = _TAG_FIELDS.get('configuration', {}).get('properties', {})
+    for name, schema in properties.items():
+        if name in document and not _value_matches(document[name], schema):
+            raise AdapterError('tag_configuration_type_mismatch')
     return document
 
 
@@ -213,6 +246,7 @@ class Rest:
     def configure_tags(self, document, *, allow_gateway_write=False):
         self._version_required(BETA)
         self._write_allowed(allow_gateway_write)
+        tag_configuration_document(document)
         return self._config_result(self._call('POST', '/data/api/v1/tags/configuration', body=document))
 
     def read_values(self, document):

@@ -1,22 +1,68 @@
 {
+  "provenance": {
+    "field_names": {
+      "source": "temporary Linux 2027.2.0-beta1 isolated OpenAPI excerpt",
+      "commit": "f44dc247811f4a50e6399196f6df8073e519342e",
+      "path": "docs/evidence/isolated-linux-same-tab/beta1-tag-openapi-fields.json",
+      "sha256": "d7461e7bc941eebac42f75c2992968dd03b26fce4c505aad4e72612af696e4e0"
+    },
+    "types": {
+      "source": "official Mac isolated Gateway OpenAPI",
+      "path": "/Users/wubin/ignition-harness-gateways/private/openapi-2027.raw.json",
+      "sha256": "b2bfc2d59854d48f313e33dc22f7302e8647f2a3be1cf6d0a42cd1d73d8c0ec4",
+      "bytes": 17223504,
+      "mtime": "2026-11-18 10:59:17 Asia/Singapore",
+      "openapi": "3.1.0",
+      "path_count": 696,
+      "note": "Property types only. The raw OpenAPI file is not vendored. values items are not a single JSON type; additionalProperties is unset."
+    }
+  },
   "read": {
     "type": "object",
-    "properties": [
-      "tags"
-    ],
     "required": [
       "tags"
-    ]
+    ],
+    "properties": {
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
   },
   "write": {
     "type": "object",
-    "properties": [
-      "tagPaths",
-      "values"
-    ],
     "required": [
       "tagPaths",
       "values"
-    ]
+    ],
+    "properties": {
+      "tagPaths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "values": {
+        "type": "array"
+      }
+    }
+  },
+  "configuration": {
+    "properties": {
+      "provider": {
+        "type": "string"
+      },
+      "path": {
+        "type": "string"
+      },
+      "collisionPolicy": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "object"
+      }
+    }
   }
 }

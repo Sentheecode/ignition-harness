@@ -435,6 +435,40 @@ class AdapterTests(unittest.TestCase):
         ready=plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{
             'document':{'tagPaths':['[default]Fixture/T'],'values':[21.5]},'expected_count':1})
         self.assertEqual(ready['calls'][0]['body'],{'tagPaths':['[default]Fixture/T'],'values':[21.5]})
+        null_value={'tagPaths':['[default]Fixture/T'],'values':[None]}
+        self.assertEqual(plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{
+            'document':null_value,'expected_count':1})['calls'][0]['body'],null_value)
+
+    def test_beta_tag_wrong_json_types_are_not_sent(self):
+        from research.ignition_adapter.cli import plan
+        wrong=[
+            ('read', {'tags':'[default]Fixture/T'}),
+            ('read', {'tags':{'path':'[default]Fixture/T'}}),
+            ('read', {'tags':None}),
+            ('write', {'tagPaths':['[default]Fixture/T'],'values':21.5}),
+            ('write', {'tagPaths':'[default]Fixture/T','values':[21.5]}),
+            ('write', {'tagPaths':['[default]Fixture/T'],'values':{'v':21.5}}),
+            ('write', {'tagPaths':['[default]Fixture/T'],'values':'21.5'}),
+            ('write', {'tagPaths':None,'values':[21.5]}),
+        ]
+        with fixture_server() as (base,calls,_):
+            adapter=self.adapter(base);adapter.rest.discover()
+            for kind, document in wrong:
+                with self.subTest(document=document):
+                    with self.assertRaises(AdapterError) as error:
+                        if kind=='read':
+                            adapter.rest.read_values(document)
+                        else:
+                            adapter.rest.write_values(document,expected_count=1,allow_gateway_write=True)
+                    self.assertEqual(error.exception.reason,'tag_document_type_mismatch')
+                    with self.assertRaises(AdapterError) as planned:
+                        if kind=='read':
+                            plan('tag.readValues','2027.2.0-beta1','FixtureProject',{'document':document})
+                        else:
+                            plan('tag.writeValues','2027.2.0-beta1','FixtureProject',{
+                                'document':document,'expected_count':1})
+                    self.assertEqual(planned.exception.reason,'tag_document_type_mismatch')
+            self.assertEqual([call['path'] for call in calls],['/openapi.json'])
 
     def test_config_and_quality_failures_are_not_success_and_writes_are_not_retried(self):
         for mode in ['bad-quality','partial-config']:
@@ -648,7 +682,13 @@ class AdapterTests(unittest.TestCase):
             adapter.rest.configure_tags(document,allow_gateway_write=True)
             self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/configuration')
             self.assertEqual(calls[-1]['body'],json.dumps(document,separators=(',',':')).encode())
-            self.assertNotIn(b'provider',calls[-1]['body'])
+            self.assertNotIn(b'"provider"',calls[-1]['body'])
+            before=len(calls)
+            with self.assertRaises(AdapterError) as error:
+                adapter.rest.configure_tags({'provider':1,'tags':{'name':'T'},'collisionPolicy':'not-an-enum'},
+                                            allow_gateway_write=True)
+            self.assertEqual(error.exception.reason,'tag_configuration_type_mismatch')
+            self.assertEqual(len(calls),before)
 
     def test_nested_quality_and_short_write_results_are_not_success(self):
         with fixture_server('nested-quality') as (base,calls,_):
@@ -784,7 +824,7 @@ class AdapterTests(unittest.TestCase):
     def test_discover_tag_document_policy_matches_plan(self):
         from research.ignition_adapter.cli import discover, plan
         beta=discover('2027.2.0-beta1')
-        self.assertNotEqual(beta.get('beta_tag_document'),'caller_supplied_json')
+        self.assertNotIn('beta_tag_document',beta)
         policy=beta['tag_document_policy']
         self.assertEqual(policy['tag.readValues'],'excerpt:beta1-tag-openapi-fields.json')
         self.assertEqual(policy['tag.writeValues'],'excerpt:beta1-tag-openapi-fields.json')
@@ -792,6 +832,7 @@ class AdapterTests(unittest.TestCase):
         self.assertNotEqual(policy['tag.writeValues'],'caller_supplied_json')
         self.assertEqual(policy['tag.configure'],'caller_supplied_json')
         stable=discover('8.3.9')
+        self.assertNotIn('beta_tag_document',stable)
         self.assertEqual(stable['tag_document_policy']['tag.readValues'],'blocked_by_version')
         self.assertEqual(stable['tag_document_policy']['tag.writeValues'],'blocked_by_version')
         self.assertNotEqual(stable['tag_document_policy']['tag.readValues'],'caller_supplied_json')
@@ -917,13 +958,18 @@ class AdapterTests(unittest.TestCase):
                 self.assertNotIn('evil.json',str(error.exception))
         self.assertTrue(checked_archive(archive()).startswith(b'PK'))
 
-    def test_vendored_beta_tag_excerpt_is_byte_identical(self):
-        import hashlib
-        raw=(Path(__file__).parents[1]/'research/ignition_adapter/beta1-tag-openapi-fields.json').read_bytes()
-        self.assertEqual(hashlib.sha256(raw).hexdigest(),
+    def test_vendored_beta_tag_excerpt_records_both_sources(self):
+        raw=json.loads((Path(__file__).parents[1]/'research/ignition_adapter/beta1-tag-openapi-fields.json').read_text())
+        self.assertEqual(raw['provenance']['field_names']['sha256'],
                          'd7461e7bc941eebac42f75c2992968dd03b26fce4c505aad4e72612af696e4e0')
-        self.assertEqual(json.loads(raw)['read']['properties'],['tags'])
-        self.assertEqual(json.loads(raw)['write']['required'],['tagPaths','values'])
+        self.assertEqual(raw['provenance']['types']['sha256'],
+                         'b2bfc2d59854d48f313e33dc22f7302e8647f2a3be1cf6d0a42cd1d73d8c0ec4')
+        self.assertEqual(raw['read']['properties']['tags']['items']['type'],'string')
+        self.assertEqual(raw['write']['properties']['tagPaths']['items']['type'],'string')
+        self.assertEqual(raw['write']['properties']['values'],{'type':'array'})
+        self.assertNotIn('additionalProperties',raw['read'])
+        self.assertNotIn('type',raw['configuration'])
+        self.assertNotIn('required',raw['configuration'])
 
 
 if __name__=='__main__':unittest.main()

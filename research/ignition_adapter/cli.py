@@ -10,7 +10,8 @@ from .core import AdapterError, BETA, LabTarget, encode_json
 from .mcp import PROTOCOL, VERIFIED_TOOLS, Catalyst
 from .rest import (
     ROUTE_TABLE, perspective_client_path, project_create_document, request_target,
-    tag_export_query, tag_import_query, tag_value_document, validated_project,
+    tag_configuration_document, tag_export_query, tag_import_query, tag_value_document,
+    validated_project,
 )
 from . import ResearchAdapter
 
@@ -177,6 +178,7 @@ def plan(operation, version, project, args=None):
         }])
     if operation == 'tag.configure':
         values = _args(args, {'document'})
+        tag_configuration_document(values.get('document'))
         encode_json(values.get('document'))
         return _ready(operation, version, project, [{
             'method': 'POST', 'path': request_target('/data/api/v1/tags/configuration', project),
