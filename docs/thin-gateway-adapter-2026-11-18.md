@@ -52,8 +52,8 @@ Mac 隔离摘要里，2027.2.0-beta1 是 696 条路径、809 个操作；8.3.9 �
 2027.2.0-beta1，且 OpenAPI 里真有对应路径时：
 
 - `tag.configure`：`POST /data/api/v1/tags/configuration`。正文是调用方给出的 Tag 对象数组，每项必须有 `[provider]path`。
-- `tag.writeValues`：`POST /data/api/v1/tags/write`。正文编码为 `[{path, value}]`。证据记录了路径、值 `42.5` / `21.5` 和质量码 `192`，没有归档原始请求 JSON，所以适配器只编码这两个字段。
-- `tag.readValues`：`GET /data/api/v1/tags/read`，JSON 正文 `{paths}`。证据写明这是带 JSON 正文的 GET；原始正文同样没有归档。
+- `tag.writeValues`：`POST /data/api/v1/tags/write`。隔离 Linux 2027.2.0-beta1 的 OpenAPI 摘录要求正文是对象，必填 `tagPaths` 与 `values`（`f44dc24` 的 `docs/evidence/isolated-linux-same-tab/beta1-tag-openapi-fields.json`）。适配器在发送前用这份摘录检查正文。摘录没有字段内部 schema，因此两个数组按调用方的写入列表对齐。早先的 `[{path, value}]` 不符合该实例声明的合同。
+- `tag.readValues`：`GET /data/api/v1/tags/read`，JSON 正文是对象，必填 `tags`。同样在发送前对照摘录检查。`{paths}` 不符合该合同。Mac 证据仍记录这是带 JSON 正文的 GET，以及读回的值和质量码 `192`。
 - `mcp.listTools`：只在调用方给出 MCP 端点时执行 `initialize`、`notifications/initialized` 和分页 `tools/list`。不猜测 `/data/catalyst-agent/mcp-servers/{name}`。Mac 上实列的四个工具是 `diagnostics`、`realtime`、`query`、`providers`；适配器不补工具，也不在测试里对真 Gateway 执行工具。写入走上面的 REST，不发明 MCP 写工具。
 
 8.3.9：
@@ -67,7 +67,7 @@ Mac 隔离摘要里，2027.2.0-beta1 是 696 条路径、809 个操作；8.3.9 �
 
 执行请求不跟随 301/302/303/307/308，也不使用环境代理。输出只保留头名和状态码，头值、MCP session、分页 cursor 会从保存结果里去掉。短于 4 个字符的字面量不做字符串替换。脱敏是尽力而为，发布前仍要人工看。
 
-本地测试是进程内的 fixture HTTP/MCP 服务，不连接隔离实验室或任何生产 Gateway。
+本地测试是进程内的 fixture HTTP/MCP 服务，不连接隔离实验室或任何生产 Gateway。本分支保持为与其他研究入口平行的适配实现，不在这里合并那些分支。
 
 ```bash
 python -m unittest discover -v

@@ -13,6 +13,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
 from ignition_harness.adapter import discover_capabilities, execute, plan
+from ignition_harness.adapter.errors import AdapterError
+from ignition_harness.adapter.tag_schema import check_tag_request, load_tag_request_schema
 from ignition_harness.adapter.zipmerge import merge_project_zip
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -225,11 +227,13 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(read["status"], "completed", read)
         self.assertEqual(calls[0]["method"], "POST")
         self.assertEqual(urlsplit(calls[0]["path"]).path, "/data/api/v1/tags/write")
-        self.assertEqual(json.loads(calls[0]["body"]), [{"path": TAG, "value": 42.5}])
+        self.assertEqual(json.loads(calls[0]["body"]), {"tagPaths": [TAG], "values": [42.5]})
         self.assertEqual(calls[0]["headers"]["content-type"], "application/json")
+        self.assertTrue(written["request_schema"]["checked"])
         self.assertEqual(calls[1]["method"], "GET")
         self.assertEqual(urlsplit(calls[1]["path"]).path, "/data/api/v1/tags/read")
-        self.assertEqual(json.loads(calls[1]["body"]), {"paths": [TAG]})
+        self.assertEqual(json.loads(calls[1]["body"]), {"tags": [TAG]})
+        self.assertTrue(read["request_schema"]["checked"])
         self.assertEqual(written["response"]["results"][0]["code"], 192)
         self.assertEqual(read["response"]["results"][0]["quality"]["code"], 192)
         self.assertEqual(read["response"]["results"][0]["value"], 42.5)
@@ -238,6 +242,41 @@ class AdapterTests(unittest.TestCase):
         self.assertTrue(all("/fixture/mcp" not in call["path"] for call in calls))
         self.assertFalse(written["designer_login"])
         self.assertTrue(written["runtime_value_write"])
+
+    def test_tag_bodies_match_the_isolated_openapi_excerpt(self):
+        schema = load_tag_request_schema()
+        self.assertEqual(schema["read"]["required"], ["tags"])
+        self.assertEqual(schema["write"]["required"], ["tagPaths", "values"])
+        self.assertEqual(schema["read"]["type"], "object")
+        self.assertEqual(schema["write"]["type"], "object")
+        read_body = {"tags": [TAG]}
+        write_body = {"tagPaths": [TAG, "[default]HarnessLab/Other"], "values": [42.5, 21.5]}
+        self.assertEqual(check_tag_request("read", read_body), read_body)
+        self.assertEqual(check_tag_request("write", write_body), write_body)
+        for kind, body in (
+            ("read", {"paths": [TAG]}),
+            ("write", [{"path": TAG, "value": 42.5}]),
+            ("write", {"path": TAG, "value": 42.5}),
+            ("read", {"tags": [TAG], "paths": [TAG]}),
+            ("write", {"tagPaths": [TAG]}),
+        ):
+            with self.subTest(kind=kind, body=body):
+                with self.assertRaises(AdapterError) as caught:
+                    check_tag_request(kind, body)
+                self.assertEqual(caught.exception.kind, "request_schema_mismatch")
+        planned = plan(
+            "tag.writeValues",
+            {"writes": [
+                {"path": TAG, "value": 42.5},
+                {"path": "[default]HarnessLab/Other", "value": 21.5},
+            ]},
+            openapi=OPENAPI_2027,
+            identity=BETA,
+        )
+        self.assertEqual(
+            planned["calls"][0]["body"],
+            {"tagPaths": [TAG, "[default]HarnessLab/Other"], "values": [42.5, 21.5]},
+        )
 
     def test_839_import_and_export_are_configuration_routes(self):
         document = {

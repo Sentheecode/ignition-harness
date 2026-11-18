@@ -25,6 +25,7 @@ from .capabilities import (
 from .errors import AdapterError
 from .http import MAX_BYTES, MCP_PROTOCOL, McpLister, Transport, build_url, parse_headers, validate_url
 from .redact import Redactor
+from .tag_schema import SCHEMA_SOURCE, check_tag_request
 from .zipmerge import merge_project_zip
 
 PROJECT_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]{0,127}$")
@@ -344,7 +345,7 @@ def prepare(operation, args=None, *, openapi=None, tools=None, identity=None, mc
         paths = args.get("paths")
         if not isinstance(paths, list) or not paths:
             raise AdapterError("invalid_arguments")
-        body = {"paths": [_tag_path(path) for path in paths]}
+        body = check_tag_request("read", {"tags": [_tag_path(path) for path in paths]})
         return _flags(
             operation=operation,
             status="ready",
@@ -361,9 +362,11 @@ def prepare(operation, args=None, *, openapi=None, tools=None, identity=None, mc
                 }
             ],
             completed=False,
+            request_schema={"source": SCHEMA_SOURCE, "checked": True, "kind": "read"},
             body_encoding=(
-                "GET with JSON body {paths}. Evidence records this route and a JSON body; "
-                "the raw request document was not archived."
+                "GET JSON object {tags}. Required field names come from the isolated "
+                "2027.2.0-beta1 OpenAPI excerpt. Item schemas were not in that excerpt; "
+                "tags is the list of caller tag paths."
             ),
         ), None
 
@@ -373,12 +376,15 @@ def prepare(operation, args=None, *, openapi=None, tools=None, identity=None, mc
         writes = args.get("writes")
         if not isinstance(writes, list) or not writes:
             raise AdapterError("invalid_arguments")
-        body = []
+        tag_paths = []
+        values = []
         for item in writes:
             if not isinstance(item, dict):
                 raise AdapterError("invalid_arguments")
             _unknown(item, {"path", "value"})
-            body.append({"path": _tag_path(item.get("path")), "value": _scalar(item.get("value"))})
+            tag_paths.append(_tag_path(item.get("path")))
+            values.append(_scalar(item.get("value")))
+        body = check_tag_request("write", {"tagPaths": tag_paths, "values": values})
         return _flags(
             operation=operation,
             status="ready",
@@ -397,9 +403,11 @@ def prepare(operation, args=None, *, openapi=None, tools=None, identity=None, mc
                 }
             ],
             completed=False,
+            request_schema={"source": SCHEMA_SOURCE, "checked": True, "kind": "write"},
             body_encoding=(
-                "JSON array of {path, value}. Evidence records the route, path, value, and quality code; "
-                "the raw request document was not archived."
+                "JSON object {tagPaths, values}. Required field names come from the isolated "
+                "2027.2.0-beta1 OpenAPI excerpt. Item schemas were not in that excerpt; "
+                "the two arrays stay aligned with the caller write list."
             ),
         ), None
 
