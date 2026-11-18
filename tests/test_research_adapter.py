@@ -65,7 +65,7 @@ def fixture_server(mode='ok'):
                 return
             if mode == 'redirect':
                 return self.reply(302, Location='http://127.0.0.1:9/stolen-secret-location')
-            if mode == 'redirect-post' and path != '/openapi.json':
+            if mode == 'redirect-post' and self.command == 'POST':
                 return self.reply(307, Location='http://127.0.0.1:9/stolen-secret-location')
             if mode == 'denied':
                 return self.reply(403, b'private-server-response Cookie=secret-value')
@@ -200,31 +200,98 @@ class AdapterTests(unittest.TestCase):
                 with zipfile.ZipFile(io.BytesIO(changed)) as z:
                     self.assertEqual(z.read('unknown-module/untouched.txt'),b'preserve exactly')
                     self.assertEqual(z.read('ignition/global-props/data.bin'),b'fixture-opaque-bytes')
-                a.rest.import_project(changed,allow_overwrite=True,disposable_project=True)
+                a.rest.import_project(changed,expected_current=original,allow_overwrite=True,disposable_project=True)
                 self.assertEqual(a.rest.export_project(),changed)
-                a.rest.import_project(original,allow_overwrite=True,disposable_project=True)
+                a.rest.import_project(original,expected_current=changed,allow_overwrite=True,disposable_project=True)
                 self.assertEqual(a.rest.export_project(),original)
                 self.assertEqual(calls[1]['headers']['Accept'],'application/zip, */*')
-                self.assertEqual(calls[2]['path'],'/data/api/v1/projects/import/FixtureProject?overwrite=true')
-                self.assertEqual(calls[2]['headers']['Content-Type'],'application/zip')
-                self.assertEqual(calls[2]['body'],changed)
+                self.assertEqual(calls[3]['path'],'/data/api/v1/projects/import/FixtureProject?overwrite=true')
+                self.assertEqual(calls[3]['headers']['Content-Type'],'application/zip')
+                self.assertEqual(calls[3]['body'],changed)
                 self.assertFalse(a.capabilities['atomic_project_write'])
                 self.assertEqual(a.identities.perspective,Status.UNKNOWN)
+
+    def test_stale_write_and_restore_never_post(self):
+        from research.ignition_adapter import ProjectConflict
+        script = 'ignition/script-python/Test/code.py'
+        for version in ['8.3.9', '2027.2.0-beta1']:
+            for restore in [False, True]:
+                with self.subTest(version=version, restore=restore), fixture_server() as (base, calls, current):
+                    rest = self.adapter(base, version).rest
+                    rest.discover()
+                    baseline = rest.export_project()
+                    changed = patch_existing_view(baseline, VIEW, {'text': 'changed'})
+                    expected, desired = baseline, changed
+                    flags = dict(allow_overwrite=True, disposable_project=True)
+                    if restore:
+                        rest.import_project(changed, expected_current=baseline, **flags)
+                        expected, desired = rest.export_project(), baseline
+                    edited = io.BytesIO(expected)
+                    with zipfile.ZipFile(edited, 'a') as z:
+                        z.writestr(script, 'edited by another user')
+                    current['zip'] = edited.getvalue()
+                    calls.clear()
+                    with self.assertRaises(ProjectConflict) as caught:
+                        rest.import_project(desired, expected_current=expected, **flags)
+                    self.assertEqual(caught.exception.paths, (script,))
+                    self.assertEqual([c['method'] for c in calls], ['GET'])
+                    self.assertEqual(current['zip'], edited.getvalue())
+
+    def test_cli_import_checks_saved_baseline_before_post(self):
+        from research.ignition_adapter.__main__ import main
+        with tempfile.TemporaryDirectory() as directory, fixture_server() as (base, calls, current):
+            root = Path(directory)
+            (root/'expected.zip').write_bytes(current['zip'])
+            (root/'desired.zip').write_bytes(archive('A'))
+            (root/'headers.json').write_text('{}')
+            arguments = dict(allow_overwrite=True, disposable_project=True,
+                             zip_path=str(root/'desired.zip'), expected_path=str(root/'expected.zip'))
+            (root/'args.json').write_text(json.dumps(arguments))
+            cmd = ['execute', '--operation', 'project.importZip', '--isolated-test-gateway',
+                   '--base-url', base, '--project', 'FixtureProject', '--version', '8.3.9',
+                   '--headers-file', str(root/'headers.json'), '--args-file', str(root/'args.json')]
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main(cmd), 0)
+            self.assertEqual([c['method'] for c in calls], ['GET', 'GET', 'POST'])
+            current['zip'] = archive('B')
+            calls.clear()
+            with contextlib.redirect_stdout(io.StringIO()) as out:
+                self.assertEqual(main(cmd), 2)
+            self.assertEqual(json.loads(out.getvalue())['kind'], 'project_contents_changed')
+            self.assertEqual([c['method'] for c in calls], ['GET', 'GET'])
+
+    def test_compare_uncompressed_entries_and_report_all_changes(self):
+        from research.ignition_adapter import changed_project_paths
+        original = archive()
+        def repack(edit):
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(io.BytesIO(original)) as src, zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as dst:
+                for name in reversed(src.namelist()):
+                    if edit and name == 'unknown-module/untouched.txt':
+                        continue
+                    data = b'new' if edit and name == VIEW else src.read(name)
+                    dst.writestr(name, data)
+                if edit:
+                    dst.writestr('new-file', b'')
+            return buffer.getvalue()
+        self.assertEqual(changed_project_paths(original, repack(False)), ())
+        self.assertEqual(changed_project_paths(original, repack(True)),
+                         tuple(sorted([VIEW, 'new-file', 'unknown-module/untouched.txt'])))
 
     def test_import_needs_both_explicit_acknowledgements(self):
         with fixture_server() as (base,calls,_):
             a=self.adapter(base);a.rest.discover()
             for kwargs in [{},{'allow_overwrite':True},{'disposable_project':True}]:
-                with self.assertRaises(AdapterError):a.rest.import_project(archive(),**kwargs)
+                with self.assertRaises(AdapterError):a.rest.import_project(archive(),expected_current=archive(),**kwargs)
             self.assertEqual(len(calls),1)
 
     def test_http_success_with_business_failure_is_not_accepted(self):
         with fixture_server('import-fails') as (base,calls,_):
             a=self.adapter(base);a.rest.discover()
-            with self.assertRaises(AdapterError) as error:a.rest.import_project(archive(),allow_overwrite=True,disposable_project=True)
+            with self.assertRaises(AdapterError) as error:a.rest.import_project(archive(),expected_current=archive(),allow_overwrite=True,disposable_project=True)
             self.assertEqual(error.exception.reason,'operation_failed')
             self.assertNotIn('private-server-response',str(error.exception))
-            self.assertEqual(len(calls),2)
+            self.assertEqual(len(calls),3)
 
     def test_839_mcp_and_runtime_tag_writes_block_without_requests(self):
         with fixture_server() as (base,calls,_):
@@ -504,10 +571,10 @@ class AdapterTests(unittest.TestCase):
             adapter=self.adapter(base);adapter.rest.discover()
             before=len(calls)
             with self.assertRaises(AdapterError) as error:
-                adapter.rest.import_project(archive(),allow_overwrite=True,disposable_project=True)
+                adapter.rest.import_project(archive(),expected_current=archive(),allow_overwrite=True,disposable_project=True)
             self.assertEqual(error.exception.status,307)
             self.assertNotIn('stolen-secret-location',str(error.exception))
-            self.assertEqual([call['path'] for call in calls[before:]],['/data/api/v1/projects/import/FixtureProject?overwrite=true'])
+            self.assertEqual([call['path'] for call in calls[before:]],['/data/api/v1/projects/export/FixtureProject','/data/api/v1/projects/import/FixtureProject?overwrite=true'])
         previous={key:os.environ.get(key) for key in ('http_proxy','https_proxy','HTTP_PROXY','ALL_PROXY')}
         os.environ['http_proxy']=os.environ['https_proxy']=os.environ['HTTP_PROXY']=os.environ['ALL_PROXY']='http://127.0.0.1:9'
         try:

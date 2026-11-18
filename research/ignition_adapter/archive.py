@@ -39,6 +39,24 @@ def checked_archive(data):
     return data
 
 
+class ProjectConflict(AdapterError):
+    def __init__(self, paths):
+        self.paths = paths
+        super().__init__('project_contents_changed')
+
+
+def changed_project_paths(expected, actual):
+    """Return differing archive paths, ignoring ZIP packing and entry order."""
+    with zipfile.ZipFile(io.BytesIO(checked_archive(expected))) as before, \
+            zipfile.ZipFile(io.BytesIO(checked_archive(actual))) as after:
+        old, new = set(before.namelist()), set(after.namelist())
+        changed = old ^ new
+        for path in old & new:
+            if before.read(path) != after.read(path):
+                changed.add(path)
+        return tuple(sorted(changed))
+
+
 def patch_existing_view(archive, resource_path, view):
     """Replace only an existing View JSON, retaining unknown files and ZIP metadata.
 
