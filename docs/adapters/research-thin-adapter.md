@@ -142,4 +142,4 @@ MCP session ID 只存在于客户端内存，而且只在对应的 HTTP 200 正�
 
 ### 本轮验证结果
 
-`python3 -m unittest discover -v tests -t .` 为 44 项通过，约 24.3 秒。Beta Tag 读写作在发请求前对照 Linux 临时 OpenAPI 的顶层字段摘录检查；配置导入仍走 8.3.9 的原始字节和查询串。项目覆盖在导入前按文件内容比较；只含目录的 ZIP 条目不算内容变化。无效 MCP 成功响应不再留下 READY 或新 session。ZIP 条目名拒绝控制字符和盘符路径，但保留以 `/` 结尾的目录条目。MCP schema 的来源哈希仍对应固定提交 `e0e583bcc18b989bd2ba1edb6f771f00eb5df570`。此库为同步、单调用方研究接口，不支持多线程共享同一实例。没有运行任何既有 Gateway 的探测、写入或登录。这些测试仍不是 Mac 实机证据。
+`python3 -m unittest discover -v tests -t .` 为 45 项通过，24.334 秒。Beta Tag 读写作在发请求前对照 Linux 临时 OpenAPI 的顶层字段摘录检查；配置导入仍走 8.3.9 的原始字节和查询串。项目覆盖在导入前按文件内容比较；只含目录的 ZIP 条目不算内容变化。无效 MCP 成功响应不再留下 READY 或新 session。ZIP 条目名拒绝控制字符和盘符路径，但保留以 `/` 结尾的目录条目。MCP schema 的来源哈希仍对应固定提交 `e0e583bcc18b989bd2ba1edb6f771f00eb5df570`。此库为同步、单调用方研究接口，不支持多线程共享同一实例。没有运行任何既有 Gateway 的探测、写入或登录。这些测试仍不是 Mac 实机证据。
