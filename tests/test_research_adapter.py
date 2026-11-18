@@ -783,6 +783,8 @@ class AdapterTests(unittest.TestCase):
             accepted=[
                 ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':192}]}),
                 ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':192.0}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,
+                 {'results':[{'code':192,'diagnosticMessage':'Good','unlisted':True}]}),
                 (two,2,{'results':[{'code':192},{'code':192,'diagnosticMessage':'Good'}]}),
             ]
             for document, count, body in accepted:
@@ -803,6 +805,11 @@ class AdapterTests(unittest.TestCase):
                 ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':{'code':192}}),
                 ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'quality':{'code':192}}]}),
                 ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':True}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':192,'diagnosticMessage':None}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':192,'diagnosticMessage':1}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,{'results':[{'code':192,'diagnosticMessage':True}]}),
+                ({'tagPaths':['[default]Fixture/T'],'values':[21.5]},1,
+                 {'results':[{'code':192,'diagnosticMessage':{'text':'Good'}}]}),
             ]
             for document, count, body in rejected:
                 with self.subTest(rejected=body):

@@ -187,7 +187,8 @@ def tag_write_results(document, result):
 
     Official POST /data/api/v1/tags/write results use a top-level numeric code.
     192.0 counts as Good. A boolean, a nested quality.code, or a missing code
-    does not. diagnosticMessage is optional.
+    does not. diagnosticMessage is optional, and a present one must be a string.
+    Unknown keys stay because additionalProperties is unset.
     """
     rows = result.get('results') if isinstance(result, dict) else None
     paths = document.get('tagPaths') if isinstance(document, dict) else None
@@ -196,6 +197,8 @@ def tag_write_results(document, result):
     for row in rows:
         code = row.get('code') if isinstance(row, dict) else None
         if not _json_number(code) or code != 192:
+            raise AdapterError('tag_write_not_all_good')
+        if 'diagnosticMessage' in row and not isinstance(row['diagnosticMessage'], str):
             raise AdapterError('tag_write_not_all_good')
     return result
 
