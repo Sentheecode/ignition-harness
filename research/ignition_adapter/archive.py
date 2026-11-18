@@ -6,6 +6,16 @@ import zipfile
 from .core import AdapterError, MAX_BYTES
 
 
+def _entry_name(name):
+    if not isinstance(name, str) or not name:
+        return False
+    if '\\' in name or ':' in name or name.startswith('/') or '//' in name:
+        return False
+    if any(ord(char) < 32 for char in name):
+        return False
+    return all(part not in ('', '.', '..') for part in PurePosixPath(name).parts)
+
+
 def checked_archive(data):
     if not isinstance(data, bytes) or len(data) > MAX_BYTES:
         raise AdapterError('invalid_project_archive')
@@ -15,8 +25,9 @@ def checked_archive(data):
             for info in archive.infolist():
                 name = info.filename
                 total += info.file_size
-                if (name in seen or '\\' in name or name.startswith('/') or
-                        '..' in PurePosixPath(name).parts or total > MAX_BYTES):
+                # orig_filename keeps a NUL that ZipInfo.filename truncates away.
+                recorded = (name, getattr(info, 'orig_filename', name))
+                if any(not _entry_name(item) for item in recorded) or name in seen or total > MAX_BYTES:
                     raise AdapterError('invalid_project_archive')
                 seen.add(name)
             if 'project.json' not in seen:

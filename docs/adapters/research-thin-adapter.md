@@ -4,15 +4,15 @@
 
 ## 实现范围与计划
 
-沿用 Python 标准库，提供研究用库，不提供产品 UI、后台服务、Companion 或自动执行的实验 CLI。
+沿用 Python 标准库，提供研究用库和一个手动的 `discover` / `plan` / `execute` 命令。没有产品 UI、后台服务或 Companion。命令不会在缺少 `--isolated-test-gateway` 时打开 socket，也不会把 header 值写到输出里。
 
 - [x] 先以本地临时 HTTP server 写测试：实际 REST 请求形状、MCP 分页/会话、认证隔离、失败、禁用能力、ZIP 未知文件保留。
-- [x] 实现仅接受显式隔离 loopback 目标的传输；拒绝生产端口 8088、重定向与隐式代理。所有凭据由调用方提供，库不登录、创建 key、保存凭据或推测头名。
-- [x] 公共 REST：读取目标 OpenAPI、项目原生 ZIP 导出/显式覆盖导入；预览地址只生成，不打开浏览器、不证明预览已登录。
+- [x] 实现仅接受显式隔离 loopback 目标的传输；拒绝生产端口 8088/8043/8060（含前导零写法）、用户信息、点路径、重定向与隐式代理。所有凭据由调用方提供，库不登录、创建 key、保存凭据或推测头名。
+- [x] 公共 REST：读取目标 OpenAPI、项目创建、原生 ZIP 导出/显式覆盖导入；预览地址只生成，不打开浏览器、不证明预览已登录。
 - [x] Tag 分版本：8.3.9 仅配置 import/export；Beta 提供 configuration 与运行值 read/write，不把配置导入称为运行值写入。
 - [x] Catalyst：显式提供目标 endpoint，initialize、分页 tools/list 和已发现的 diagnostics/realtime/query/providers；8.3.9 MCP 保持 blocked，不提供假 Artek 客户端。
 - [x] 工程、Gateway Web、MCP、Perspective 四种身份分别记录；实时订阅另列不支持。HTTP API 成功不证明工程身份，MCP realtime 是快照而非订阅。
-- [ ] 完成全套离线/本地协议测试和独立审查，新分支推远程并开 PR，不合并。
+- [x] 对照 PR #3 固定 tip 复核请求形状，补本地协议测试。结果只更新本 PR，不合并。
 
 ## 不承诺
 
@@ -29,9 +29,9 @@ PR #3 的 Beta 数据库预览出现 ERROR，因此不新增数据库 inspector 
 | 接口组 | 已核验合同 | 来源 |
 |---|---|---|
 | REST 发现 | `GET /openapi.json`；只使用该目标已发现的 operation | [Mac 认证/OpenAPI](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/mac-isolated-gateway-2026-11-18.md) |
-| 项目归档 | `GET /data/api/v1/projects/export/{name}`；`POST /data/api/v1/projects/import/{name}?overwrite=true`，ZIP 原始字节 | [独立 View 基线/修改/恢复](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/evidence/mac-mini-isolated/view-write-preview-restore-2027-beta1.json)与该 PR 的 8.3.9 报告 |
-| 8.3.9 Tag 配置 | `/data/api/v1/tags/import` 原始 JSON 文件字节；`/data/api/v1/tags/export` | [8.3.9 逐步记录](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/evidence/mac-mini-isolated/8.3.9-view-write-preview-restore.json) |
-| Beta Tag | `/data/api/v1/tags/configuration` POST；`/tags/read` GET **JSON body**；`/tags/write` POST | [Mac Beta 记录](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/evidence/mac-mini-isolated/2027.2.0-beta1-view-write-preview-restore.json)、[已存在的请求结果](https://github.com/Sentheecode/ignition-harness/blob/547587fcd97f9885c56bce6102c7b6e6a5a86baa/docs/evidence/runtime-beta1/tag-runtime-results.json) |
+| 项目 | `POST /data/api/v1/projects`，正文只带证据里记下的 `name`；`GET /data/api/v1/projects/export/{name}`；`POST /data/api/v1/projects/import/{name}?overwrite=true`，ZIP 原始字节 | [独立 View 基线/修改/恢复](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/evidence/mac-mini-isolated/view-write-preview-restore-2027-beta1.json)与该 PR 的 8.3.9 报告 |
+| 8.3.9 Tag 配置 | 创建：`POST /data/api/v1/tags/import?provider=default&type=json&collisionPolicy=Abort`。更新再加 `&path=`。正文是调用方的 JSON 文件原始字节，`Content-Type: application/octet-stream`。读回：`GET /data/api/v1/tags/export?provider=&type=json&path=` | [8.3.9 逐步记录](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/evidence/mac-mini-isolated/8.3.9-view-write-preview-restore.json) |
+| Beta Tag | `POST /data/api/v1/tags/configuration`；`GET /data/api/v1/tags/read`，带 JSON 正文；`POST /data/api/v1/tags/write`。证据归档了路径、值和响应，没有归档请求 JSON，因此库原样发送调用方文档，不另起字段名 | [Mac Beta 记录](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/evidence/mac-mini-isolated/2027.2.0-beta1-view-write-preview-restore.json)、[已存在的响应结果](https://github.com/Sentheecode/ignition-harness/blob/547587fcd97f9885c56bce6102c7b6e6a5a86baa/docs/evidence/runtime-beta1/tag-runtime-results.json) |
 | Catalyst | 显式传入从目标复制的 endpoint；协议 `2025-06-18`；四项工具的实际 inputSchema | [Mac 工具合同](https://github.com/Sentheecode/ignition-harness/blob/e0e583bcc18b989bd2ba1edb6f771f00eb5df570/docs/evidence/mac-mini-isolated/2027.2.0-beta1-mcp-tools.redacted.json) |
 | Perspective | `/data/perspective/client/{project}` 地址生成 | 同一 Mac View 记录；不是 `/app/perspective/...` SPA 外壳 |
 
@@ -52,11 +52,12 @@ a = ResearchAdapter(target, owned_project,
                     mcp_headers=mcp_headers)                 # 不复用 Web cookie
 
 a.rest.discover()              # 先读该目标 OpenAPI；不会登录或刷新凭据
+a.rest.create_project(allow_gateway_write=True)  # {"name": owned_project}，无其他字段
 baseline_zip = a.rest.export_project()
 preview_url = a.preview_url()  # 不发 HTTP，不判定 Perspective 身份或画面就绪
 ```
 
-目标强制为 loopback、显式端口、指定版本和隔离声明，拒绝 8088/8043/8060 等生产默认端口。构造实例不连接网络；网络只在显式调用方法时发生。这是研究误用防护，不是自动识别任意生产 Gateway 的机制。HTTP 不使用环境代理、不跟随重定向，单个响应和请求上限 32 MiB，默认 15 秒 socket 操作超时；不持久化 session，不自动重试。
+目标强制为 loopback、显式端口、指定版本和隔离声明。`8088`、`8043`、`8060` 按解析后的端口号拒绝，所以 `08088` 同样拒绝。用户信息、`@` 混淆和百分号编码的 host 也拒绝。构造实例不连接网络；网络只在显式调用方法时发生。这是研究误用防护，不是自动识别任意生产 Gateway 的机制。HTTP 不使用环境代理，301/302/303/307/308 在读取 Location 之前失败，单个响应和请求上限 32 MiB，默认 15 秒 socket 操作超时；不持久化 session，不自动重试。MCP 路径里的 `.`、`..` 和 `%` 编码会被拒绝。服务器返回的 session 值若含空格或控制字符，不会被存下来或写进后续请求，异常文本也不包含该值。
 
 REST 与 MCP 的 header 字典分别复制、分别使用，没有默认的认证头或自动生成 token。PR #3 还明确记录：一枚可初始化 MCP 的 key 对 REST/OpenAPI 返回 403。因此不能把 MCP READY 当作 REST 授权，亦不能将失败归因为所有登录已过期。Web session cookie/CSRF 由真实浏览器流程提供，本库没有登录或续期功能。
 
@@ -80,9 +81,25 @@ restored_readback = a.rest.export_project()
 
 ### Tag 分版本
 
-- 8.3.9：`import_tag_configuration(provider, path, document, collision_policy=..., allow_gateway_write=True)` 采用已验证的 Abort/MergeOverwrite 配置导入；`export_tag_configuration` 读取配置。导入 Memory Tag value 可能改变默认值，**不是**通用运行值写入 API。`write_values` 和 MCP 均拒绝，不尝试 fallback。
-- Beta：`configure_tags(..., allow_gateway_write=True)` 处理配置；`read_values(paths)` 是 GET JSON body；`write_values(paths, values, allow_gateway_write=True)` 是独立值写入。检查逐项结果，仅把本轮已证实的质量码 192 当作全项 Good，其余结果失败返回，不自动再次写入。
+- 8.3.9：`import_tag_configuration(provider, document_bytes, path=None, collision_policy='Abort'|'MergeOverwrite', allow_gateway_write=True)`。`path=None` 对应记录里的根上 Abort 创建，不附加 `path` 查询；传入文件夹时才附加记录中的 `&path=`。`document_bytes` 原样作为 `application/octet-stream` 发送，不重新 `json.dumps`。`export_tag_configuration(provider, path)` 读取配置。导入 Memory Tag value 可能改变默认值，这是配置导入，不是通用运行值写入 API。`read_values`、`write_values`、`configure_tags` 和 MCP 在 8.3.9 上拒绝，且不发请求。
+- Beta：`configure_tags(document, allow_gateway_write=True)`、`read_values(document)`、`write_values(document, expected_count=..., allow_gateway_write=True)`。`document` 是调用方按该 Gateway OpenAPI 准备的 JSON 对象或数组，库不改名、不包一层 `provider` / `tagPaths`。`read_values` 使用 GET 加 JSON 正文。写入成功只承认响应 `results` 长度等于 `expected_count` 且每项 `code == 192`；读接口里的 `quality.code` 不能当成写入成功。8.3.9 的 import/export 不会被拿来当作 Beta 运行值写入。
 - Tag 属于 Gateway/Provider 范围，项目归档覆盖确认不授权 Tag 操作，Tag 变更需要独立的显式写入标记。数据库 inspector、UDT 语义编辑和实时订阅未实现。
+
+手动命令不读取 `/usr/local/ignition`，也不打印 header：
+
+```bash
+python -m research.ignition_adapter discover --version 8.3.9
+python -m research.ignition_adapter plan \
+  --operation tag.importConfiguration --version 8.3.9 --project HarnessLab \
+  --args-file /path/outside/repo/import-args.json
+python -m research.ignition_adapter execute --isolated-test-gateway \
+  --operation tag.exportConfiguration --version 8.3.9 --project HarnessLab \
+  --base-url "$LAB_GATEWAY_ORIGIN" \
+  --headers-file /path/outside/repo/headers.json \
+  --args-file /path/outside/repo/export-args.json
+```
+
+`discover` 只看本地版本策略和可选的 OpenAPI 文件，不因为版本字符串就宣布路由可用。`plan` 不打开 socket。`execute` 在标志缺失时直接拒绝。标准输出会把 header 值和 session 值替换成 `[redacted]`，并且不回显整份 OpenAPI。
 
 ### Catalyst 与状态
 
@@ -95,7 +112,7 @@ result = a.mcp.realtime(paths) # 一次快照，不是订阅
 
 调用参数来自固定 schema，query 的本地保守结果上限是 500；调用原始结果不改造为猜测的统一数据格式。`query` continuationPoint 与 tools/list cursor 是两种游标，调用方自行传入前者；库不将它们混用。
 
-MCP session ID 只存在于客户端内存。已建立 session 后 HTTP 404 会清除 session/catalog 并进入 EXPIRED；初始化 URL 首次 404 是 FAILED，不伪装成过期。401/403 为该 MCP 通道 DENIED。恢复必须显式重新 initialize、重新 list_tools；不会自动重放工具调用。没有额外 SSE 订阅、listChanged 持续监听或刷新工程身份的行为。
+MCP session ID 只存在于客户端内存，而且只在对应的 HTTP 200 正文通过 JSON/RPC 检查之后才会保存。正文是残缺 JSON、id 类型不对、同时带 `result` 和 `error`，或含 `NaN`/`Infinity` 时，不采用随该响应到来的 `Mcp-Session-Id`，并清除已有 session、catalog 和 READY；下一次调用必须显式重新 initialize。格式正确的 JSON-RPC `error`（没有 `result`）仍只表示这一次调用失败，不把通道打成未初始化。`notifications/initialized` 不要求成功结果；空正文可以进入 READY，带 `error` 的正文则不能。session 值只接受最长 200 的可见 ASCII，拒绝 CR/LF、空格、引号和反斜杠；拒绝时异常文本不包含该值。这不表示已经在某个 HTTP 栈上复现出第二枚注入头。已建立 session 后 HTTP 404 会清除 session/catalog 并进入 EXPIRED；初始化 URL 首次 404 是 FAILED，不伪装成过期。401/403 为该 MCP 通道 DENIED。恢复必须显式重新 initialize、重新 list_tools；不会自动重放工具调用。没有额外 SSE 订阅、listChanged 持续监听或刷新工程身份的行为。项目 ZIP 在导入前检查条目名：拒绝控制字符（含被 `ZipInfo.filename` 截断后仍留在 `orig_filename` 里的 NUL）、盘符路径、反斜杠和 `..`。库仍不解压归档。
 
 | 状态/能力 | 本库行为 |
 |---|---|
@@ -107,10 +124,10 @@ MCP session ID 只存在于客户端内存。已建立 session 后 HTTP 404 会�
 
 ## 测试与本轮交付边界
 
-`python -m unittest discover -v` 只连接测试自己创建的随机 loopback 端口；测试数据明确为 fixture。测试覆盖真实请求编码、JSON/SSE 分页、逐项失败、凭据隔离、版本拒绝、schema 变化、session 过期与归档保留。结果是**新库的本地协议回归**，不是新一轮 Mac Gateway 实测。
+`python3 -m unittest discover -v` 只连接测试自己创建的随机 loopback 端口；测试数据明确为 fixture。测试核对 8.3.9 导入查询串和原始字节、Beta 文档不被改写、项目创建正文、MCP initialize / `notifications/initialized` / `tools/list` 的请求，以及重定向、代理环境变量、点路径、坏 session 和 CLI 脱敏。结果是**新库的本地协议回归**，不是新一轮 Mac Gateway 实测。
 
 只引用 PR #3 的公开证据，不复制该 PR 的历史报告，不合并它或另外两份 PR。库没有生产目标配置、UI、Companion、第三方模块二进制、凭据文件或实际项目 ZIP。
 
 ### 本轮验证结果
 
-21 项本地协议回归通过；独立代码审查发现的畸形 HTTP 状态行异常泄漏已修复并加入失败/通过回归。MCP schema 的来源哈希及所用 REST 路径已与 PR #3 固定提交复核。此库为同步、单调用方研究接口，不支持多线程共享同一实例。没有运行任何既有 Gateway 的探测、写入或登录。
+38 项本地协议回归通过。对照 PR #3 后去掉了 Beta Tag 请求里未经归档的字段名包装，8.3.9 导入改为记录中的查询串加原始 JSON 字节，并补上项目创建。随后又按只读探针补上：无效 MCP 成功响应不再留下 READY 或新 session，严格 JSON 拒绝非有限数字，ZIP 条目名拒绝控制字符和盘符路径。MCP schema 的来源哈希仍对应固定提交 `e0e583bcc18b989bd2ba1edb6f771f00eb5df570`。此库为同步、单调用方研究接口，不支持多线程共享同一实例。没有运行任何既有 Gateway 的探测、写入或登录。这些测试仍不是 Mac 实机证据。

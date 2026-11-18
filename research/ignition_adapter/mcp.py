@@ -1,7 +1,7 @@
 """Only the four Catalyst tool contracts captured at PR #3's pinned tip."""
 import json
 from pathlib import Path
-from .core import AdapterError, BETA, Status, credentials, decode_json
+from .core import AdapterError, BETA, Status, credentials, decode_json, opaque_header_token
 from .rest import _paths
 
 _SCHEMAS = json.loads(Path(__file__).with_name('catalyst_contract.json').read_text())['input_schemas']
@@ -38,33 +38,72 @@ class Catalyst:
         if not notification:
             self._sequence += 1
             message['id'] = self._sequence
-        headers = dict(self._headers, Accept='application/json, text/event-stream')
+        headers = dict(self._headers)
         if self._session_id:
             headers['Mcp-Session-Id'] = self._session_id
         if self._protocol:
             headers['MCP-Protocol-Version'] = self._protocol
         try:
-            raw, response_headers = self._http.request('POST', self._path, headers, json_body=message,
-                                                       rpc_id=None if notification else message['id'])
+            raw, response_headers = self._http.request(
+                'POST', self._path, headers, json_body=message,
+                rpc_id=None if notification else message['id'],
+                accept='application/json, text/event-stream')
         except AdapterError as error:
             self._invalidate(Status.EXPIRED if error.status == 404 and self._session_id is not None else
                              Status.DENIED if error.status in (401,403) else Status.FAILED)
             raise
-        session = response_headers.get('mcp-session-id')
-        if session:
+        try:
+            session = self._candidate_session(response_headers)
+            if notification:
+                self._notification_body(raw)
+                result = None
+            else:
+                result = self._rpc_result(raw, message['id'])
+        except AdapterError:
+            # A 200 body that is not a valid protocol message must not keep READY
+            # or install the session header that arrived with it.
+            self._invalidate(Status.FAILED)
+            raise
+        if session is not None:
             self._session_id = session
         if notification:
             return None
+        kind, value = result
+        if kind == 'rpc_error':
+            raise AdapterError('rpc_error')
+        return value
+
+    @staticmethod
+    def _candidate_session(headers):
+        if 'mcp-session-id' not in headers:
+            return None
+        session = headers.get('mcp-session-id')
+        if not opaque_header_token(session):
+            raise AdapterError('invalid_session_header')
+        return session
+
+    @staticmethod
+    def _notification_body(raw):
+        # Notifications do not require a JSON-RPC result. An empty body is enough.
+        # A JSON-RPC error body is still a failure and must not be ignored.
+        if not raw or not raw.strip():
+            return
+        payload = decode_json(raw)
+        if isinstance(payload, dict) and 'error' in payload:
+            raise AdapterError('rpc_error')
+
+    @staticmethod
+    def _rpc_result(raw, rpc_id):
         result = decode_json(raw)
         if (not isinstance(result, dict) or result.get('jsonrpc') != '2.0' or
-                type(result.get('id')) is not int or result['id'] != message['id'] or
+                type(result.get('id')) is not int or result['id'] != rpc_id or
                 ('error' in result) == ('result' in result)):
             raise AdapterError('invalid_rpc_response')
         if 'error' in result:
-            raise AdapterError('rpc_error')
+            return ('rpc_error', result)
         if not isinstance(result['result'], dict):
             raise AdapterError('invalid_rpc_result')
-        return result['result']
+        return ('ok', result['result'])
 
     def initialize(self):
         self._supported()

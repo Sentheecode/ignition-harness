@@ -50,7 +50,8 @@ class LabTarget:
                      url.scheme in ('http', 'https') and url.hostname in ('localhost', '127.0.0.1', '::1') and
                      url.port is not None and url.port not in (8088, 8043, 8060) and
                      url.username is None and url.password is None and not url.query and not url.fragment and
-                     url.path in ('', '/') and not any(ord(c) <= 32 for c in self.base_url))
+                     url.path in ('', '/') and '@' not in url.netloc and '%' not in url.netloc and
+                     '\\' not in self.base_url and not any(ord(c) <= 32 for c in self.base_url))
             if not valid:
                 raise ValueError
         except (ValueError, TypeError, AttributeError):
@@ -69,10 +70,41 @@ class LabTarget:
 
 
 def relative_path(path):
-    if (not isinstance(path, str) or not path.startswith('/') or path.startswith('//') or
-            '#' in path or any(ord(c) <= 32 for c in path)):
+    """Reject traversal, encoded separators, and header injection in a request target."""
+    if not isinstance(path, str) or not path.startswith('/') or path.startswith('//'):
         raise AdapterError('invalid_request_path')
+    if '#' in path or '\\' in path or any(ord(char) <= 32 for char in path):
+        raise AdapterError('invalid_request_path')
+    route, separator, query = path.partition('?')
+    if separator and (not query or query.startswith('?')):
+        raise AdapterError('invalid_request_path')
+    segments = route.split('/')
+    if any(segment == '' or '%' in segment for segment in segments[1:]):
+        raise AdapterError('invalid_request_path')
+    for segment in segments[1:]:
+        decoded = urllib.parse.unquote(segment)
+        if decoded in ('.', '..') or '/' in decoded or '\\' in decoded:
+            raise AdapterError('invalid_request_path')
     return path
+
+
+def opaque_header_token(value):
+    """Printable session token: no CTL, space, quote, or backslash, and not echoed in errors."""
+    if not isinstance(value, str) or not 1 <= len(value) <= 200:
+        return False
+    return all(33 <= ord(char) <= 126 and char not in '"\\' for char in value)
+
+
+def encode_json(body):
+    if not isinstance(body, (dict, list)) or not body:
+        raise AdapterError('invalid_json_request')
+    try:
+        encoded = json.dumps(body, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode()
+    except (TypeError, ValueError):
+        raise AdapterError('invalid_json_request') from None
+    if len(encoded) > MAX_BYTES:
+        raise AdapterError('request_too_large_or_invalid')
+    return encoded
 
 
 def credentials(headers):
@@ -91,15 +123,21 @@ def credentials(headers):
 
 
 def decode_json(raw):
+    def reject_non_finite(_value):
+        raise ValueError('non-finite')
+
     try:
-        return json.loads(raw)
-    except (ValueError, UnicodeError):
+        text = raw.decode('utf-8') if isinstance(raw, (bytes, bytearray)) else raw
+        return json.loads(text, parse_constant=reject_non_finite)
+    except (TypeError, ValueError, UnicodeError):
         raise AdapterError('invalid_json_response') from None
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
+    def http_error_302(self, req, fp, code, msg, headers):
+        raise urllib.error.HTTPError(req.full_url, code, 'redirect_refused', headers, fp)
+
+    http_error_301 = http_error_303 = http_error_307 = http_error_308 = http_error_302
 
 
 class HTTP:
@@ -107,18 +145,16 @@ class HTTP:
         self.target = target
         self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
-    def request(self, method, path, headers, *, data=None, json_body=None, rpc_id=None):
+    def request(self, method, path, headers, *, data=None, json_body=None, rpc_id=None,
+                accept='application/json'):
         relative_path(path)
         headers = dict(headers)
         if json_body is not None:
-            try:
-                data = json.dumps(json_body, allow_nan=False).encode()
-            except (ValueError, TypeError):
-                raise AdapterError('invalid_json_request') from None
+            data = encode_json(json_body)
             headers['Content-Type'] = 'application/json'
+        headers['Accept'] = accept
         if data is not None and (not isinstance(data, bytes) or len(data) > MAX_BYTES):
             raise AdapterError('request_too_large_or_invalid')
-        headers.setdefault('Accept', 'application/json')
         request = urllib.request.Request(self.target.base_url + path, data=data, headers=headers, method=method)
         try:
             with self._opener.open(request, timeout=15) as response:
@@ -156,4 +192,8 @@ class HTTP:
                 if isinstance(payload, dict) and payload.get('id') == rpc_id:
                     return json.dumps(payload).encode()
             if not raw:
+                if lines:
+                    payload = decode_json('\n'.join(lines))
+                    if isinstance(payload, dict) and payload.get('id') == rpc_id:
+                        return json.dumps(payload).encode()
                 raise AdapterError('sse_without_response')

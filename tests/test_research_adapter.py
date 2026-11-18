@@ -3,7 +3,12 @@ import contextlib
 import copy
 import io
 import json
+import os
 from pathlib import Path
+import socket
+import subprocess
+import sys
+import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import unittest
@@ -32,7 +37,8 @@ def archive(text='baseline'):
 @contextlib.contextmanager
 def fixture_server(mode='ok'):
     calls, current = [], {'zip': archive()}
-    routes = {'/data/api/v1/projects/export/{name}': {'get': {}},
+    routes = {'/data/api/v1/projects': {'post': {}},
+              '/data/api/v1/projects/export/{name}': {'get': {}},
               '/data/api/v1/projects/import/{name}': {'post': {}},
               '/data/api/v1/tags/import': {'post': {}}, '/data/api/v1/tags/export': {'get': {}},
               '/data/api/v1/tags/configuration': {'post': {}},
@@ -58,9 +64,16 @@ def fixture_server(mode='ok'):
                 self.wfile.write(b'private-server-response Cookie=secret-value\r\n\r\n')
                 return
             if mode == 'redirect':
-                return self.reply(302, Location='/do-not-follow')
+                return self.reply(302, Location='http://127.0.0.1:9/stolen-secret-location')
+            if mode == 'redirect-post' and path != '/openapi.json':
+                return self.reply(307, Location='http://127.0.0.1:9/stolen-secret-location')
             if mode == 'denied':
                 return self.reply(403, b'private-server-response Cookie=secret-value')
+            if path == '/data/api/v1/projects' and self.command == 'POST':
+                posted = json.loads(raw)
+                if mode == 'create-fails' or posted.get('name') != 'FixtureProject':
+                    return self.reply(200, {'success': False, 'problem': {'message': 'private-server-response'}})
+                return self.reply(200, {'success': True, 'changes': [{'name': 'FixtureProject'}]})
             if path == '/openapi.json':
                 paths = {} if mode == 'missing-routes' else routes
                 return self.reply(200, {'openapi':'3.1.0','info':{'title':'Fixture','version':'1'},'paths':paths})
@@ -74,19 +87,29 @@ def fixture_server(mode='ok'):
             if path == '/data/api/v1/tags/read':
                 return self.reply(200, {'results':[{'value':42.5,'quality':{'code':192}}]})
             if path == '/data/api/v1/tags/write':
+                if mode == 'nested-quality':
+                    return self.reply(200, {'results': [{'quality': {'code': 192}}]})
                 return self.reply(200, {'results':[{'code':192 if mode!='bad-quality' else 0}]})
             if path in ('/data/api/v1/tags/configuration','/data/api/v1/tags/import'):
                 return self.reply(200, {'successCount':1,'failureCount':0 if mode!='partial-config' else 1,'failures':[]})
             if path == '/data/api/v1/tags/export':
-                return self.reply(200, {'name':'Fixture','tagType':'Folder','tags':[]},'application/octet-stream')
+                body = {'name':'Fixture','tagType':'Folder','tags':[]}
+                if mode == 'echo-secret':
+                    body['leak'] = self.headers.get('Cookie')
+                return self.reply(200, body, 'application/octet-stream')
             if path == '/data/catalyst-agent/mcp-servers/HarnessLab':
                 message=json.loads(raw)
                 if mode == 'mcp-missing':return self.reply(404)
                 if mode == 'expired' and message['method']!='initialize':
                     return self.reply(404)
                 if message['method']=='initialize':
-                    return self.reply(200, {'jsonrpc':'2.0','id':message['id'],'result':CONTRACT['initialize']},Mcp_Session_Id='fixture-session-secret')
+                    session = 'bad session' if mode == 'bad-session' else 'fixture-session-secret'
+                    return self.reply(200, {'jsonrpc':'2.0','id':message['id'],'result':CONTRACT['initialize']},Mcp_Session_Id=session)
                 if message['method']=='notifications/initialized':
+                    if mode == 'notify-error':
+                        return self.reply(200, {'jsonrpc':'2.0','error':{'code':-32000,'message':'private-server-response'}})
+                    if mode == 'notify-benign':
+                        return self.reply(200, {'jsonrpc':'2.0'})
                     return self.reply(202)
                 if message['method']=='tools/list':
                     cursor=message['params'].get('cursor')
@@ -98,6 +121,27 @@ def fixture_server(mode='ok'):
                             result['tools'][-1]['inputSchema']['required']=['unverified_new_argument']
                     if mode == 'loop':result['nextCursor']='fixture-cursor'
                 else:
+                    if mode == 'poison-json':
+                        body=b'{"jsonrpc":"2.0","id":'+str(message['id']).encode()+b',"result":{"private-server-response"'
+                        self.send_response(200)
+                        self.send_header('Content-Type','application/json')
+                        self.send_header('Content-Length',str(len(body)))
+                        self.send_header('Mcp-Session-Id','poison-session-id')
+                        self.end_headers();self.wfile.write(body);return
+                    if mode == 'dual-rpc':
+                        return self.reply(200, {'jsonrpc':'2.0','id':message['id'],'result':{'isError':False},
+                                                'error':{'code':-32000,'message':'private-server-response'}},
+                                          Mcp_Session_Id='after-dual-fields')
+                    if mode == 'string-id':
+                        return self.reply(200, {'jsonrpc':'2.0','id':str(message['id']),'result':{'isError':False}},
+                                          Mcp_Session_Id='id-type-mismatch')
+                    if mode == 'nan-result':
+                        body=('{"jsonrpc":"2.0","id":%d,"result":{"isError":false,"structuredContent":{"value":NaN,"inf":Infinity},"leak":"private-server-response"}}'%message['id']).encode()
+                        self.send_response(200)
+                        self.send_header('Content-Type','application/json')
+                        self.send_header('Content-Length',str(len(body)))
+                        self.send_header('Mcp-Session-Id','nan-session')
+                        self.end_headers();self.wfile.write(body);return
                     if mode == 'tool-error':result={'isError':True,'content':[{'type':'text','text':'private-server-response'}]}
                     else:result={'isError':False,'structuredContent':{'fixture':True}}
                 payload={'jsonrpc':'2.0','id':message['id'],'result':result}
@@ -128,9 +172,16 @@ class AdapterTests(unittest.TestCase):
             mcp_headers={'X-Ignition-API-Token':'Fixture:token-fixture-secret'})
 
     def test_production_port_and_nonisolated_targets_rejected_without_network(self):
-        for base,flag in [('http://127.0.0.1:8088',True),('http://example.com:18088',True),('http://127.0.0.1:18088',False)]:
-            with self.subTest(base=base),self.assertRaises(AdapterError):
-                LabTarget(base,'2027.2.0-beta1',isolated_test_gateway=flag)
+        rejected = [
+            ('http://127.0.0.1:8088', True), ('http://127.0.0.1:08088', True),
+            ('http://127.0.0.1:8043', True), ('http://[::1]:8060', True),
+            ('http://example.com:18088', True), ('http://127.0.0.1:18088', False),
+            ('http://127.0.0.1:18088', 1), ('http://@127.0.0.1:18088', True),
+            ('http://127.0.0.1:18088\\@evil.com/', True), ('http://127.1:18088', True),
+        ]
+        for base, flag in rejected:
+            with self.subTest(base=base, flag=flag), self.assertRaises(AdapterError):
+                LabTarget(base, '2027.2.0-beta1', isolated_test_gateway=flag)
 
     def test_openapi_is_required_and_missing_routes_are_not_invented(self):
         with fixture_server('missing-routes') as (base,calls,_):
@@ -153,6 +204,7 @@ class AdapterTests(unittest.TestCase):
                 self.assertEqual(a.rest.export_project(),changed)
                 a.rest.import_project(original,allow_overwrite=True,disposable_project=True)
                 self.assertEqual(a.rest.export_project(),original)
+                self.assertEqual(calls[1]['headers']['Accept'],'application/zip, */*')
                 self.assertEqual(calls[2]['path'],'/data/api/v1/projects/import/FixtureProject?overwrite=true')
                 self.assertEqual(calls[2]['headers']['Content-Type'],'application/zip')
                 self.assertEqual(calls[2]['body'],changed)
@@ -178,43 +230,75 @@ class AdapterTests(unittest.TestCase):
         with fixture_server() as (base,calls,_):
             a=self.adapter(base,'8.3.9')
             with self.assertRaises(AdapterError):a.mcp.initialize()
-            with self.assertRaises(AdapterError):a.rest.write_values(['[default]Fixture/T'],[1],allow_gateway_write=True)
+            with self.assertRaises(AdapterError):a.rest.read_values({'paths':['[default]Fixture/T']})
+            with self.assertRaises(AdapterError):a.rest.configure_tags({'name':'T'},allow_gateway_write=True)
+            with self.assertRaises(AdapterError):a.rest.write_values({'value':1},expected_count=1,allow_gateway_write=True)
             self.assertEqual(calls,[])
             self.assertEqual(a.identities.mcp,Status.BLOCKED)
 
     def test_839_tag_configuration_import_export_have_verified_wire_shapes(self):
         with fixture_server() as (base,calls,_):
             a=self.adapter(base,'8.3.9');a.rest.discover()
-            document={'tags':[{'name':'T','tagType':'AtomicTag','valueSource':'memory','value':21.5}]}
-            a.rest.import_tag_configuration('default','Fixture',document,collision_policy='MergeOverwrite',allow_gateway_write=True)
-            result=a.rest.export_tag_configuration('default','Fixture')
-            self.assertEqual(calls[-2]['path'],'/data/api/v1/tags/import?provider=default&type=json&collisionPolicy=MergeOverwrite&path=Fixture')
+            created=b'{"name":"HarnessLab","tagType":"Folder","tags":[{"name":"Temperature","value":42.5}]}\n'
+            updated=b'{"tags":[{"name":"Temperature","value":21.5}]}\n'
+            a.rest.import_tag_configuration('default',created,collision_policy='Abort',allow_gateway_write=True)
+            a.rest.import_tag_configuration('default',updated,path='HarnessLab',collision_policy='MergeOverwrite',allow_gateway_write=True)
+            result=a.rest.export_tag_configuration('default','HarnessLab')
+            self.assertEqual(calls[-3]['path'],'/data/api/v1/tags/import?provider=default&type=json&collisionPolicy=Abort')
+            self.assertEqual(calls[-3]['headers']['Content-Type'],'application/octet-stream')
+            self.assertEqual(calls[-3]['body'],created)
+            self.assertEqual(calls[-2]['path'],'/data/api/v1/tags/import?provider=default&type=json&collisionPolicy=MergeOverwrite&path=HarnessLab')
             self.assertEqual(calls[-2]['headers']['Content-Type'],'application/octet-stream')
-            self.assertEqual(json.loads(calls[-2]['body']),document)
-            self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/export?provider=default&type=json&path=Fixture')
+            self.assertEqual(calls[-2]['body'],updated)
+            self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/export?provider=default&type=json&path=HarnessLab')
+            self.assertNotIn('X-Ignition-Api-Token',calls[-1]['headers'])
+            self.assertEqual(calls[-1]['headers']['Cookie'],'web-fixture-secret')
             self.assertEqual(result['tagType'],'Folder')
 
     def test_beta_read_values_uses_get_json_body_and_write_is_distinct(self):
         with fixture_server() as (base,calls,_):
             a=self.adapter(base);a.rest.discover()
-            self.assertEqual(a.rest.read_values(['[default]Fixture/T'])['results'][0]['value'],42.5)
-            a.rest.write_values(['[default]Fixture/T'],[21.5],allow_gateway_write=True)
+            read_body={'paths':['[default]Fixture/T']}
+            write_body=[{'path':'[default]Fixture/T','value':21.5}]
+            self.assertEqual(a.rest.read_values(read_body)['results'][0]['value'],42.5)
+            a.rest.write_values(write_body,expected_count=1,allow_gateway_write=True)
             self.assertEqual(calls[-2]['method'],'GET')
-            self.assertEqual(json.loads(calls[-2]['body']),{'tags':['[default]Fixture/T']})
-            self.assertEqual(json.loads(calls[-1]['body']),{'tagPaths':['[default]Fixture/T'],'values':[21.5]})
+            self.assertEqual(calls[-2]['path'],'/data/api/v1/tags/read')
+            self.assertEqual(calls[-2]['headers']['Content-Type'],'application/json')
+            self.assertEqual(calls[-2]['body'],json.dumps(read_body,separators=(',',':')).encode())
+            self.assertEqual(calls[-1]['method'],'POST')
+            self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/write')
+            self.assertEqual(calls[-1]['body'],json.dumps(write_body,separators=(',',':')).encode())
+            self.assertNotIn(b'tagPaths',calls[-1]['body'])
+            self.assertNotIn(b'collisionPolicy',calls[-1]['body'])
 
     def test_config_and_quality_failures_are_not_success_and_writes_are_not_retried(self):
         for mode in ['bad-quality','partial-config']:
             with self.subTest(mode=mode),fixture_server(mode) as (base,calls,_):
                 a=self.adapter(base);a.rest.discover()
                 with self.assertRaises(AdapterError):
-                    if mode=='bad-quality':a.rest.write_values(['[default]Fixture/T'],[1],allow_gateway_write=True)
-                    else:a.rest.configure_tags('default','Fixture',{'name':'T'},allow_gateway_write=True)
+                    if mode=='bad-quality':a.rest.write_values({'value':1},expected_count=1,allow_gateway_write=True)
+                    else:a.rest.configure_tags({'name':'T'},allow_gateway_write=True)
                 self.assertEqual(len(calls),2)
 
     def test_catalyst_pagination_and_calls_keep_four_identity_states_separate(self):
         with fixture_server() as (base,calls,_):
             a=self.adapter(base);a.mcp.initialize();tools=a.mcp.list_tools()
+            initial=json.loads(calls[0]['body'])
+            self.assertEqual(initial['method'],'initialize')
+            self.assertEqual(initial['params']['protocolVersion'],'2025-06-18')
+            self.assertEqual(initial['params']['capabilities'],{})
+            self.assertEqual(set(initial['params']),{'protocolVersion','capabilities','clientInfo'})
+            self.assertNotIn('Mcp-Protocol-Version',calls[0]['headers'])
+            self.assertNotIn('Mcp-Session-Id',calls[0]['headers'])
+            self.assertEqual(calls[0]['headers']['Accept'],'application/json, text/event-stream')
+            self.assertEqual(json.loads(calls[1]['body']),{'jsonrpc':'2.0','method':'notifications/initialized'})
+            self.assertEqual(calls[1]['headers']['Mcp-Protocol-Version'],'2025-06-18')
+            self.assertEqual(calls[1]['headers']['Mcp-Session-Id'],'fixture-session-secret')
+            self.assertEqual(json.loads(calls[2]['body'])['params'],{})
+            self.assertEqual(json.loads(calls[3]['body'])['params'],{'cursor':'fixture-cursor'})
+            for call in calls:
+                self.assertNotIn('Cookie',call['headers'])
             self.assertEqual([t['name'] for t in tools],['diagnostics','realtime','query','providers'])
             self.assertEqual(a.mcp.providers()['structuredContent'],{'fixture':True})
             a.mcp.realtime(['[default]Fixture/T'])
@@ -260,6 +344,7 @@ class AdapterTests(unittest.TestCase):
         with fixture_server() as (base,calls,_):
             a=self.adapter(base)
             self.assertEqual(a.preview_url(),base+'/data/perspective/client/FixtureProject')
+            self.assertNotIn('/app/perspective',a.preview_url())
             self.assertEqual(calls,[])
             self.assertEqual(a.identities.perspective,Status.UNKNOWN)
 
@@ -295,6 +380,9 @@ class AdapterTests(unittest.TestCase):
                                 mcp_endpoint='http://127.0.0.1:8088/data/catalyst-agent/mcp-servers/HarnessLab')
             with self.assertRaises(AdapterError):
                 ResearchAdapter(target,'FixtureProject',rest_headers={'Cookie':'unsafe\r\nheader'})
+            with self.assertRaises(AdapterError):
+                ResearchAdapter(target,'FixtureProject',rest_headers={},
+                                mcp_endpoint=base+'/data/%2e%2e/mcp')
             self.assertEqual(calls,[])
 
     def test_malformed_http_status_is_sanitized_and_updates_mcp_failure_state(self):
@@ -311,11 +399,318 @@ class AdapterTests(unittest.TestCase):
         with fixture_server('redirect') as (base,calls,_):
             with self.assertRaises(AdapterError) as error:self.adapter(base).rest.discover()
             self.assertEqual(error.exception.status,302)
+            self.assertNotIn('stolen-secret-location',str(error.exception))
             self.assertEqual(len(calls),1)
+            self.assertEqual(calls[0]['path'],'/openapi.json')
 
     def test_archive_patch_rejects_new_resource_and_invalid_zip(self):
         with self.assertRaises(AdapterError):patch_existing_view(archive(),VIEW.replace('Home','New'),{})
         with self.assertRaises(AdapterError):patch_existing_view(b'not zip',VIEW,{})
+
+    def test_archive_patch_preserves_entry_metadata_and_order(self):
+        raw=io.BytesIO()
+        with zipfile.ZipFile(raw,'w') as source:
+            info=zipfile.ZipInfo('project.json',date_time=(2020,1,2,3,4,6))
+            info.compress_type=zipfile.ZIP_DEFLATED
+            info.external_attr=0o644<<16
+            source.writestr(info,'{"title":"Fixture"}')
+            source.writestr('folder/',b'')
+            opaque=zipfile.ZipInfo('ignition/global-props/data.bin',date_time=(2019,5,6,7,8,8))
+            opaque.compress_type=zipfile.ZIP_DEFLATED
+            source.writestr(opaque,b'\x00\x01opaque')
+            source.writestr(VIEW,json.dumps({'root':{'props':{'text':'baseline'}}}))
+            source.comment=b'archive-comment'
+        original=raw.getvalue()
+        changed=patch_existing_view(original,VIEW,{'root':{'props':{'text':'changed'}}})
+        with zipfile.ZipFile(io.BytesIO(original)) as before, zipfile.ZipFile(io.BytesIO(changed)) as after:
+            self.assertEqual(before.namelist(),after.namelist())
+            self.assertEqual(after.comment,b'archive-comment')
+            for name in before.namelist():
+                old,new=before.getinfo(name),after.getinfo(name)
+                self.assertEqual(old.compress_type,new.compress_type)
+                self.assertEqual(old.date_time,new.date_time)
+                self.assertEqual(old.external_attr,new.external_attr)
+            self.assertEqual(after.read('ignition/global-props/data.bin'),b'\x00\x01opaque')
+            self.assertEqual(json.loads(after.read(VIEW))['root']['props']['text'],'changed')
+
+    def test_project_create_sends_only_the_recorded_name(self):
+        for version in ('8.3.9','2027.2.0-beta1'):
+            with self.subTest(version=version),fixture_server() as (base,calls,_):
+                adapter=self.adapter(base,version);adapter.rest.discover()
+                with self.assertRaises(AdapterError):adapter.rest.create_project()
+                self.assertEqual(len(calls),1)
+                result=adapter.rest.create_project(allow_gateway_write=True)
+                self.assertEqual(calls[-1]['method'],'POST')
+                self.assertEqual(calls[-1]['path'],'/data/api/v1/projects')
+                self.assertEqual(calls[-1]['body'],b'{"name":"FixtureProject"}')
+                self.assertTrue(result['success'])
+                self.assertEqual(adapter.identities.engineering,Status.UNAVAILABLE)
+
+    def test_create_business_failure_hides_server_text_and_is_not_retried(self):
+        with fixture_server('create-fails') as (base,calls,_):
+            adapter=self.adapter(base);adapter.rest.discover()
+            with self.assertRaises(AdapterError) as error:
+                adapter.rest.create_project(allow_gateway_write=True)
+            self.assertEqual(error.exception.reason,'operation_failed')
+            self.assertNotIn('private-server-response',str(error.exception))
+            self.assertEqual(len(calls),2)
+
+    def test_beta_tag_routes_are_not_used_on_839_and_import_is_not_a_beta_write(self):
+        with fixture_server() as (base,calls,_):
+            beta=self.adapter(base)
+            with self.assertRaises(AdapterError):
+                beta.rest.import_tag_configuration('default',b'{"tags":[{"name":"T"}]}',allow_gateway_write=True)
+            with self.assertRaises(AdapterError):
+                beta.rest.export_tag_configuration('default','HarnessLab')
+            stable=self.adapter(base,'8.3.9')
+            with self.assertRaises(AdapterError):
+                stable.rest.configure_tags({'name':'T'},allow_gateway_write=True)
+            self.assertEqual(calls,[])
+
+    def test_tag_import_rejects_reencoded_documents_and_unverified_policies(self):
+        with fixture_server() as (base,calls,_):
+            adapter=self.adapter(base,'8.3.9');adapter.rest.discover()
+            for document in ({'tags':[{'name':'T'}]}, b'not-json', b'{}', b'[]', b''):
+                with self.assertRaises(AdapterError):
+                    adapter.rest.import_tag_configuration('default',document,allow_gateway_write=True)
+            with self.assertRaises(AdapterError):
+                adapter.rest.import_tag_configuration('default',b'{"tags":[{"name":"T"}]}',collision_policy='Ignore',allow_gateway_write=True)
+            self.assertEqual(len(calls),1)
+
+    def test_configure_document_is_not_wrapped(self):
+        with fixture_server() as (base,calls,_):
+            adapter=self.adapter(base);adapter.rest.discover()
+            document={'path':'[default]HarnessLab/Temperature','tagType':'AtomicTag'}
+            adapter.rest.configure_tags(document,allow_gateway_write=True)
+            self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/configuration')
+            self.assertEqual(calls[-1]['body'],json.dumps(document,separators=(',',':')).encode())
+            self.assertNotIn(b'provider',calls[-1]['body'])
+
+    def test_nested_quality_and_short_write_results_are_not_success(self):
+        with fixture_server('nested-quality') as (base,calls,_):
+            adapter=self.adapter(base);adapter.rest.discover()
+            with self.assertRaises(AdapterError):
+                adapter.rest.write_values([{'path':'[default]Fixture/T','value':1}],expected_count=1,allow_gateway_write=True)
+            self.assertEqual(len(calls),2)
+        with fixture_server() as (base,calls,_):
+            adapter=self.adapter(base);adapter.rest.discover()
+            with self.assertRaises(AdapterError):
+                adapter.rest.write_values([{'path':'[default]Fixture/T','value':1},{'path':'[default]Fixture/U','value':2}],
+                                          expected_count=2,allow_gateway_write=True)
+            self.assertEqual(len(calls),2)
+
+    def test_post_redirect_is_not_followed_and_proxy_env_is_ignored(self):
+        with fixture_server('redirect-post') as (base,calls,_):
+            adapter=self.adapter(base);adapter.rest.discover()
+            before=len(calls)
+            with self.assertRaises(AdapterError) as error:
+                adapter.rest.import_project(archive(),allow_overwrite=True,disposable_project=True)
+            self.assertEqual(error.exception.status,307)
+            self.assertNotIn('stolen-secret-location',str(error.exception))
+            self.assertEqual([call['path'] for call in calls[before:]],['/data/api/v1/projects/import/FixtureProject?overwrite=true'])
+        previous={key:os.environ.get(key) for key in ('http_proxy','https_proxy','HTTP_PROXY','ALL_PROXY')}
+        os.environ['http_proxy']=os.environ['https_proxy']=os.environ['HTTP_PROXY']=os.environ['ALL_PROXY']='http://127.0.0.1:9'
+        try:
+            with fixture_server() as (base,calls,_):
+                self.adapter(base).rest.discover()
+                self.assertEqual([call['path'] for call in calls],['/openapi.json'])
+        finally:
+            for key,value in previous.items():
+                if value is None:os.environ.pop(key,None)
+                else:os.environ[key]=value
+
+    def test_invalid_mcp_session_is_not_stored_or_echoed(self):
+        with fixture_server('bad-session') as (base,calls,_):
+            adapter=self.adapter(base)
+            with self.assertRaises(AdapterError) as error:adapter.mcp.initialize()
+            self.assertEqual(error.exception.reason,'invalid_session_header')
+            self.assertNotIn('bad session',str(error.exception))
+            self.assertEqual(adapter.identities.mcp,Status.FAILED)
+            self.assertIsNone(adapter.mcp._session_id)
+            self.assertEqual(len(calls),1)
+
+    def test_reinitialize_does_not_send_the_previous_session(self):
+        with fixture_server() as (base,calls,_):
+            adapter=self.adapter(base)
+            adapter.mcp.initialize()
+            adapter.mcp.initialize()
+            self.assertNotIn('Mcp-Session-Id',calls[2]['headers'])
+            self.assertEqual(json.loads(calls[2]['body'])['method'],'initialize')
+
+    def test_ipv6_loopback_target_stays_on_loopback(self):
+        class Server(ThreadingHTTPServer):
+            address_family=socket.AF_INET6
+        seen=[]
+
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self,*args):
+                pass
+            def do_GET(self):
+                seen.append(self.path)
+                body=json.dumps({'openapi':'3.1.0','info':{'title':'Fixture','version':'1'},'paths':{}}).encode()
+                self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(body)))
+                self.end_headers();self.wfile.write(body)
+        server=Server(('::1',0),Handler)
+        thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
+        try:
+            base='http://[::1]:'+str(server.server_address[1])
+            self.adapter(base,'8.3.9').rest.discover()
+            self.assertEqual(seen,['/openapi.json'])
+        finally:
+            server.shutdown();server.server_close();thread.join()
+
+    def test_cli_plan_matches_wire_shape_and_execute_redacts_headers(self):
+        from research.ignition_adapter.cli import plan
+        root=Path(__file__).parents[1]
+        planned=plan('tag.importConfiguration','8.3.9','HarnessLab',
+                     {'provider':'default','collision_policy':'Abort'})
+        self.assertEqual(planned['calls'][0]['path'],'/data/api/v1/tags/import?provider=default&type=json&collisionPolicy=Abort')
+        self.assertEqual(planned['network'],False)
+        blocked=plan('tag.readValues','8.3.9','HarnessLab',{'document':{'paths':['[default]HarnessLab/Temperature']}})
+        self.assertEqual(blocked['status'],'blocked')
+        self.assertEqual(blocked['calls'],[])
+        with fixture_server() as (base,calls,_):
+            proc=subprocess.run([sys.executable,'-m','research.ignition_adapter','execute','--operation','tag.exportConfiguration',
+                                 '--version','8.3.9','--project','FixtureProject','--base-url',base,
+                                 '--headers-file',str(root/'tests'/'test_research_adapter.py')],
+                                cwd=root,capture_output=True,text=True)
+            self.assertEqual(calls,[])
+            self.assertEqual(proc.returncode,2)
+            self.assertIn('isolated_ack_required',proc.stdout)
+            self.assertNotIn('web-fixture-secret',proc.stdout)
+        with fixture_server('echo-secret') as (base,calls,_):
+            with tempfile.TemporaryDirectory() as directory:
+                header_path=Path(directory)/'headers.json'
+                args_path=Path(directory)/'args.json'
+                header_path.write_text(json.dumps({'Cookie':'web-fixture-secret','X-CSRF-Token':'csrf-fixture-secret'}),encoding='utf-8')
+                args_path.write_text(json.dumps({'provider':'default','path':'HarnessLab'}),encoding='utf-8')
+                proc=subprocess.run([sys.executable,'-m','research.ignition_adapter','execute','--isolated-test-gateway',
+                                     '--operation','tag.exportConfiguration','--version','8.3.9','--project','FixtureProject',
+                                     '--base-url',base,'--headers-file',str(header_path),'--args-file',str(args_path)],
+                                    cwd=root,capture_output=True,text=True)
+            self.assertEqual(proc.returncode,0,proc.stdout+proc.stderr)
+            self.assertNotIn('web-fixture-secret',proc.stdout)
+            self.assertNotIn('csrf-fixture-secret',proc.stdout)
+            self.assertIn('[redacted]',proc.stdout)
+            self.assertEqual(calls[-1]['path'],'/data/api/v1/tags/export?provider=default&type=json&path=HarnessLab')
+            self.assertEqual(calls[-1]['headers']['Cookie'],'web-fixture-secret')
+            self.assertNotIn('X-Ignition-Api-Token',calls[-1]['headers'])
+
+    def test_cli_refuses_gateway_install_paths_and_reports_openapi_routes_offline(self):
+        from research.ignition_adapter.cli import discover, outside_gateway_install
+        with self.assertRaises(AdapterError):
+            outside_gateway_install('/usr/local/ignition/data/db/config.idb')
+        report=discover('8.3.9')
+        self.assertEqual(report['network'],False)
+        self.assertEqual(report['operations']['tag.importConfiguration'],'needs_target_openapi')
+        self.assertEqual(report['operations']['tag.readValues'],'blocked_by_version')
+        self.assertEqual(report['operations']['mcp.listTools'],'blocked_by_version')
+        self.assertIn('designer_login',report['not_claimed'])
+        present=discover('2027.2.0-beta1',{'openapi':'3.1.0','paths':{
+            '/data/api/v1/tags/read':{'get':{}},'/data/api/v1/tags/write':{'post':{}},
+            '/data/api/v1/tags/configuration':{'post':{}}}})
+        self.assertEqual(present['operations']['tag.readValues'],'present')
+        self.assertEqual(present['operations']['tag.importConfiguration'],'blocked_by_version')
+        self.assertEqual(present['operations']['mcp.call'],'needs_explicit_endpoint')
+
+    def _ready_catalog(self, mode='ok'):
+        context=fixture_server(mode)
+        base,calls,_=context.__enter__()
+        self.addCleanup(lambda: context.__exit__(None,None,None))
+        adapter=self.adapter(base)
+        adapter.mcp.initialize()
+        adapter.mcp.list_tools()
+        self.assertEqual(adapter.identities.mcp,Status.READY)
+        return adapter,calls
+
+    def test_malformed_success_does_not_install_session_or_stay_ready(self):
+        for mode,secret in (('poison-json','private-server-response'),('dual-rpc','private-server-response'),
+                            ('string-id','id-type-mismatch'),('nan-result','private-server-response')):
+            with self.subTest(mode=mode):
+                adapter,calls=self._ready_catalog(mode)
+                before=len(calls)
+                with self.assertRaises(AdapterError) as error:
+                    adapter.mcp.providers()
+                self.assertNotIn(secret,str(error.exception))
+                self.assertNotIn(secret,repr(error.exception))
+                self.assertNotEqual(adapter.identities.mcp,Status.READY)
+                self.assertFalse(adapter.mcp._initialized)
+                self.assertIsNone(adapter.mcp._catalog)
+                self.assertNotIn('poison',adapter.mcp._session_id or '')
+                self.assertNotIn('after-dual',adapter.mcp._session_id or '')
+                self.assertNotIn('id-type',adapter.mcp._session_id or '')
+                self.assertNotIn('nan-session',adapter.mcp._session_id or '')
+                with self.assertRaises(AdapterError):
+                    adapter.mcp.providers()
+                self.assertEqual(len(calls),before+1)
+                self.assertNotIn('poison-session-id',calls[-1]['headers'].get('Mcp-Session-Id',''))
+
+    def test_notification_error_body_does_not_mark_ready_and_empty_body_still_does(self):
+        with fixture_server('notify-error') as (base,calls,_):
+            adapter=self.adapter(base)
+            with self.assertRaises(AdapterError) as error:
+                adapter.mcp.initialize()
+            self.assertEqual(error.exception.reason,'rpc_error')
+            self.assertNotIn('private-server-response',str(error.exception))
+            self.assertNotEqual(adapter.identities.mcp,Status.READY)
+            self.assertFalse(adapter.mcp._initialized)
+            self.assertIsNone(adapter.mcp._session_id)
+            self.assertEqual(len(calls),2)
+        with fixture_server('notify-benign') as (base,calls,_):
+            adapter=self.adapter(base)
+            adapter.mcp.initialize()
+            self.assertEqual(adapter.identities.mcp,Status.READY)
+            self.assertEqual(len(calls),2)
+
+    def test_folded_or_quoted_session_is_rejected_without_replay(self):
+        class Scripted:
+            def __init__(self, session):
+                self.session,self.calls=session,[]
+            def request(self, method, path, headers, **kwargs):
+                self.calls.append(dict(headers))
+                body=json.dumps({'jsonrpc':'2.0','id':1,'result':{'protocolVersion':'2025-06-18','capabilities':{},
+                                 'serverInfo':{'name':'fixture','version':'0'}}}).encode()
+                return body,{'mcp-session-id':self.session}
+        with fixture_server() as (base,calls,_):
+            for session in ('good\r\n X-Boundary-Inject: pwned','session "quoted" value'):
+                with self.subTest(session=session):
+                    adapter=self.adapter(base)
+                    scripted=Scripted(session)
+                    adapter.mcp._http=scripted
+                    with self.assertRaises(AdapterError) as error:
+                        adapter.mcp.initialize()
+                    self.assertEqual(error.exception.reason,'invalid_session_header')
+                    self.assertNotIn('Boundary-Inject',str(error.exception))
+                    self.assertNotIn('quoted',str(error.exception))
+                    self.assertIsNone(adapter.mcp._session_id)
+                    self.assertNotEqual(adapter.identities.mcp,Status.READY)
+                    self.assertEqual(len(scripted.calls),1)
+                    self.assertNotIn('Mcp-Session-Id',scripted.calls[0])
+                    with self.assertRaises(AdapterError):
+                        adapter.mcp.list_tools()
+                    self.assertEqual(len(scripted.calls),1)
+            self.assertEqual(calls,[])
+
+    def test_archive_rejects_control_and_drive_names_without_extracting(self):
+        from research.ignition_adapter.archive import checked_archive
+        def zipped(name):
+            data=io.BytesIO()
+            with zipfile.ZipFile(data,'w') as archive:
+                archive.writestr('project.json',b'{"title":"Fixture"}')
+                stored='views/Xevil.json' if '\x00' in name else name
+                archive.writestr(stored,b'private-server-response')
+            raw=data.getvalue()
+            if '\x00' in name:
+                raw=raw.replace(b'views/Xevil.json', name.encode('utf-8'))
+            return raw
+        for name in ('views/\r\n/evil.json','views/\x00evil.json','C:/Windows/system32/evil.json'):
+            with self.subTest(name=name):
+                with self.assertRaises(AdapterError) as error:
+                    checked_archive(zipped(name))
+                self.assertEqual(error.exception.reason,'invalid_project_archive')
+                self.assertNotIn('private-server-response',str(error.exception))
+                self.assertNotIn('evil.json',str(error.exception))
+        self.assertTrue(checked_archive(archive()).startswith(b'PK'))
 
 
 if __name__=='__main__':unittest.main()
